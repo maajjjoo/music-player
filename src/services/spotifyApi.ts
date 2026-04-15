@@ -1,4 +1,4 @@
-import { getValidAccessToken } from './spotifyAuth';
+import { getValidAccessToken, clearTokens } from './spotifyAuth';
 import type { Song } from '../models/Song';
 
 const SPOTIFY_API_BASE = 'https://api.spotify.com/v1';
@@ -10,6 +10,12 @@ async function apiFetch<T>(endpoint: string): Promise<T> {
   const response = await fetch(`${SPOTIFY_API_BASE}${endpoint}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
+
+  if (response.status === 401) {
+    clearTokens();
+    window.location.reload();
+    throw new Error('Token expired, reloading...');
+  }
 
   if (!response.ok) throw new Error(`Spotify API error: ${response.status}`);
   return response.json() as Promise<T>;
