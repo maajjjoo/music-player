@@ -197,14 +197,22 @@ export class DoublyLinkedList {
   reorderByIds(fromId: string, toId: string): void {
     if (fromId === toId) return;
 
-    // Remove the dragged node from its current position
+    // Get current songs and find indices
     const songs = this.toArray().map((n) => n.song);
     const fromIndex = songs.findIndex((s) => s.id === fromId);
     const toIndex = songs.findIndex((s) => s.id === toId);
     if (fromIndex === -1 || toIndex === -1) return;
 
+    // Remove from original position
     const [moved] = songs.splice(fromIndex, 1);
-    songs.splice(toIndex, 0, moved);
+    
+    // Calculate correct insertion index
+    // If we're moving forward (fromIndex < toIndex), the toIndex is already correct after removal
+    // If we're moving backward (fromIndex > toIndex), we need to insert at toIndex
+    const insertIndex = fromIndex < toIndex ? toIndex - 1 : toIndex;
+    
+    // Insert at new position
+    songs.splice(insertIndex, 0, moved);
 
     // Rebuild list
     const currentId = this.currentNode?.song.id;

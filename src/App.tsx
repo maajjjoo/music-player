@@ -1,8 +1,8 @@
-import { useEffect, useCallback, useState } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import type { Song } from './models/Song';
 import { usePlaylist } from './hooks/usePlaylist';
 import { useAudioPlayer } from './hooks/useAudioPlayer';
-import { getDefaultSongs } from './services/itunesApi';
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { Vinyl } from './components/Vinyl/Vinyl';
 import { CoverShelf } from './components/CoverShelf/CoverShelf';
 import { SearchBar } from './components/SearchBar/SearchBar';
@@ -19,13 +19,14 @@ export default function App() {
   }, []);
 
   const player = useAudioPlayer(handleSongEnded);
+  const [notification, setNotification] = useState<string | null>(null);
 
-  useEffect(() => {
-    getDefaultSongs()
-      .then((songs) => songs.forEach((s) => playlist.addToEnd(s)))
-      .catch(console.error);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  const showNotification = useCallback((message: string) => {
+    setNotification(message);
+    setTimeout(() => setNotification(null), 2000);
   }, []);
+
+  // Removed automatic song loading - user must search and add songs
 
   function handlePlaySong(id: string) {
     playlist.playSong(id);
@@ -37,6 +38,12 @@ export default function App() {
     playlist.addToEnd(song);
     playlist.playSong(song.id);
     if (song.previewUrl) player.play(song.previewUrl);
+    showNotification(`✓ ${song.title} added to queue`);
+  }
+
+  function handleAddToQueue(song: Song) {
+    playlist.addToEnd(song);
+    showNotification(`✓ ${song.title} added to queue`);
   }
 
   function handleNext() {
@@ -50,6 +57,27 @@ export default function App() {
   }
 
   const allSongs = playlist.getFilteredSongs();
+
+  // Save volume to localStorage
+  useEffect(() => {
+    const savedVolume = localStorage.getItem('vinyl-volume');
+    if (savedVolume) {
+      player.setVolume(parseFloat(savedVolume));
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('vinyl-volume', player.volume.toString());
+  }, [player.volume]);
+
+  // Keyboard shortcuts
+  useKeyboardShortcuts({
+    onPlayPause: player.togglePlay,
+    onNext: handleNext,
+    onPrev: handlePrev,
+    onVolumeUp: () => player.setVolume(Math.min(1, player.volume + 0.1)),
+    onVolumeDown: () => player.setVolume(Math.max(0, player.volume - 0.1)),
+  });
 
   return (
     <div
@@ -69,11 +97,13 @@ export default function App() {
           <SearchBar
             query={playlist.searchQuery}
             onQueryChange={playlist.setSearchQuery}
-            onAddSong={playlist.addToEnd}
+            onAddSong={handleAddToQueue}
             onAddToStart={playlist.addToStart}
             onAddAtPosition={playlist.addAtPosition}
             onPlayNow={handlePlayNow}
             queueSize={playlist.songs.length}
+            onNotification={showNotification}
+            songs={playlist.songs}
           />
         </div>
         <div className="app__queue-pill">
@@ -89,18 +119,6 @@ export default function App() {
           <Vinyl
             currentSong={playlist.currentSong}
             isPlaying={player.isPlaying}
-            position={player.position}
-            duration={player.duration}
-            volume={player.volume}
-            repeatMode={playlist.repeatMode}
-            isShuffled={playlist.isShuffled}
-            onTogglePlay={player.togglePlay}
-            onNext={handleNext}
-            onPrev={handlePrev}
-            onSeek={player.seek}
-            onVolumeChange={player.setVolume}
-            onToggleRepeat={playlist.toggleRepeat}
-            onToggleShuffle={playlist.toggleShuffle}
             onColorExtracted={setBgColor}
           />
         </section>
@@ -118,9 +136,102 @@ export default function App() {
             currentSong={playlist.currentSong}
             onPlay={handlePlaySong}
             onRemove={playlist.removeSong}
+            onReorder={playlist.reorderSong}
           />
         </section>
       </main>
+
+      {/* ── Bottom Player Bar ── */}
+      <footer className="app__player">
+        {/* Progress bar at the very top */}
+        <div className="app__player-progress-bar">
+          <div className="app__player-progress-track" />
+          <div className="app__player-progress-fill" style={{ width: `${player.duration > 0 ? (player.position / player.duration) * 100 : 0}%` }} />
+          <input
+            type="range"
+            className="app__player-progress-input"
+            min={0}
+            max={player.duration || 100}
+            value={player.position}
+            onChange={(e) => player.seek(Number(e.target.value))}
+            aria-label="Seek"
+          />
+        </div>
+
+        {/* Main controls row */}
+        <div className="app__player-main">
+          {/* Left: Time */}
+          <div className="app__player-time-section">
+            <span className="app__player-time">{formatTime(player.position)}</span>
+          </div>
+
+          {/* Center: Controls */}
+          <div className="app__player-controls">
+            <button
+              className={`app__player-btn app__player-btn--sm${playlist.isShuffled ? ' app__player-btn--active' : ''}`}
+              onClick={playlist.toggleShuffle}
+              aria-label="Shuffle"
+            >⇄</button>
+
+            <button className="app__player-btn" onClick={handlePrev} aria-label="Previous">⏮</button>
+
+            <button
+              className="app__player-btn app__player-btn--play"
+              onClick={player.togglePlay}
+              aria-label={player.isPlaying ? 'Pause' : 'Play'}
+            >
+              {player.isPlaying ? '⏸' : '▶'}
+            </button>
+
+            <button className="app__player-btn" onClick={handleNext} aria-label="Next">⏭</button>
+
+            <button
+              className={`app__player-btn app__player-btn--sm${playlist.repeatMode !== 'none' ? ' app__player-btn--active' : ''}`}
+              onClick={playlist.toggleRepeat}
+              aria-label="Repeat"
+            >
+              {playlist.repeatMode === 'one' ? '🔂' : '🔁'}
+            </button>
+          </div>
+
+          {/* Right: Time + Volume */}
+          <div className="app__player-right">
+            <span className="app__player-time">{formatTime(player.duration)}</span>
+            <div className="app__player-volume">
+              <span aria-hidden="true">🔈</span>
+              <div className="app__player-volume-bar">
+                <div className="app__player-volume-track" />
+                <div className="app__player-volume-fill" style={{ width: `${player.volume * 100}%` }} />
+                <input
+                  type="range"
+                  className="app__player-volume-input"
+                  min={0}
+                  max={1}
+                  step={0.01}
+                  value={player.volume}
+                  onChange={(e) => player.setVolume(Number(e.target.value))}
+                  aria-label="Volume"
+                />
+              </div>
+              <span aria-hidden="true">🔊</span>
+            </div>
+          </div>
+        </div>
+      </footer>
+
+      {/* Notification toast */}
+      {notification && (
+        <div className="app__notification" role="status" aria-live="polite">
+          {notification}
+        </div>
+      )}
     </div>
   );
+}
+
+function formatTime(ms: number): string {
+  const total = Math.floor(ms / 1000);
+  const m = Math.floor(total / 60);
+  const s = total % 60;
+  return `${m}:${s.toString().padStart(2, '0')}`;
 }

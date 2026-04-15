@@ -14,29 +14,41 @@ html, body, #root {
   --font-display: 'Playfair Display', Georgia, serif;
   --font-body:    'Inter', system-ui, sans-serif;
 
-  /* Light palette */
-  --bg:           #f5f3ef;
-  --bg-card:      rgba(255,255,255,0.72);
-  --bg-glass:     rgba(255,255,255,0.55);
-  --surface:      #ffffff;
+  /* ── Ultra-vivid palette ── */
+  --bg:        #faf5ff;
+  --surface:   #ffffff;
+  --bg-card:   rgba(255,255,255,0.9);
+
+  /* Ultra-vivid accents - Vibrant gradient colors */
+  --accent:    #a855f7;   /* vibrant purple */
+  --accent-2:  #ec4899;   /* hot pink */
+  --accent-3:  #06b6d4;   /* cyan */
+  --accent-4:  #f59e0b;   /* amber */
+  --accent-5:  #10b981;   /* emerald */
+  --accent-6:  #f97316;   /* orange */
 
   /* Text */
-  --text-1: #1a1a1a;
-  --text-2: #555555;
-  --text-3: #999999;
-
-  /* Accent — warm terracotta */
-  --accent:   #e05c3a;
-  --accent-2: #f0a500;
+  --text-1: #0f172a;
+  --text-2: #475569;
+  --text-3: #94a3b8;
 
   /* Borders */
-  --border:   rgba(0,0,0,0.08);
-  --border-2: rgba(0,0,0,0.05);
+  --border:   rgba(168,85,247,0.2);
+  --border-2: rgba(0,0,0,0.08);
 
   /* Shadows */
-  --shadow-sm: 0 2px 12px rgba(0,0,0,0.07);
-  --shadow-md: 0 8px 32px rgba(0,0,0,0.10);
-  --shadow-lg: 0 20px 60px rgba(0,0,0,0.14);
+  --shadow-sm: 0 2px 12px rgba(168,85,247,0.15);
+  --shadow-md: 0 8px 32px rgba(168,85,247,0.2);
+  --shadow-lg: 0 20px 60px rgba(168,85,247,0.25);
+
+  /* Player-specific (legacy) */
+  --bg-player: rgba(255,255,255,0.9);
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --accent-light: rgba(168,85,247,0.12);
+  --accent-hover: #9333ea;
+  --pastel-pink: #ec4899;
 }
 
 body {
@@ -50,8 +62,8 @@ body {
 
 ::-webkit-scrollbar { height: 4px; width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 2px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.28); }
+::-webkit-scrollbar-thumb { background: rgba(108,99,255,0.2); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 
 button { font-family: inherit; cursor: pointer; border: none; background: none; }
 
@@ -71,7 +83,7 @@ input[type='range']::-webkit-slider-thumb {
   border-radius: 50%;
   background: var(--accent);
   border: 2px solid #fff;
-  box-shadow: 0 1px 6px rgba(0,0,0,0.2);
+  box-shadow: 0 1px 8px rgba(108,99,255,0.35);
   transition: transform 0.15s ease;
 }
 

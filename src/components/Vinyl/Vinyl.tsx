@@ -1,35 +1,12 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import type { SongNode } from '../../models/Song';
-import type { RepeatMode } from '../../hooks/usePlaylist';
 import './Vinyl.css';
 
 interface VinylProps {
   currentSong: SongNode | null;
   isPlaying: boolean;
-  position: number;
-  duration: number;
-  volume: number;
-  repeatMode: RepeatMode;
-  isShuffled: boolean;
-  onTogglePlay: () => void;
-  onNext: () => void;
-  onPrev: () => void;
-  onSeek: (position: number) => void;
-  onVolumeChange: (volume: number) => void;
-  onToggleRepeat: () => void;
-  onToggleShuffle: () => void;
   onColorExtracted: (color: string) => void;
 }
-
-// ── Utility: Time Formatter ───────────────────────────────────────────────────
-const TimeFormatter = {
-  format(ms: number): string {
-    const total = Math.floor(ms / 1000);
-    const m = Math.floor(total / 60);
-    const s = total % 60;
-    return `${m}:${s.toString().padStart(2, '0')}`;
-  },
-};
 
 // ── Utility: Dominant Color Extractor ────────────────────────────────────────
 const DominantColorExtractor = {
@@ -104,24 +81,11 @@ function useVinylRotation(isPlaying: boolean): number {
 export function Vinyl({
   currentSong,
   isPlaying,
-  position,
-  duration,
-  volume,
-  repeatMode,
-  isShuffled,
-  onTogglePlay,
-  onNext,
-  onPrev,
-  onSeek,
-  onVolumeChange,
-  onToggleRepeat,
-  onToggleShuffle,
   onColorExtracted,
 }: VinylProps) {
   const song = currentSong?.song;
   const imgRef = useRef<HTMLImageElement>(null);
   const rotation = useVinylRotation(isPlaying);
-  const progress = duration > 0 ? (position / duration) * 100 : 0;
 
   const handleImgLoad = useCallback(() => {
     if (imgRef.current) {
@@ -177,78 +141,6 @@ export function Vinyl({
           </div>
 
           <div className="vt__spindle" aria-hidden="true" />
-        </div>
-      </div>
-
-      {/* ── Controls ── */}
-      <div className="vt__controls">
-
-        {/* Progress */}
-        <div className="vt__progress">
-          <span className="vt__time">{TimeFormatter.format(position)}</span>
-          <div className="vt__bar">
-            <div className="vt__bar-track" />
-            <div className="vt__bar-fill" style={{ width: `${progress}%` }} />
-            <input
-              type="range"
-              className="vt__bar-input"
-              min={0}
-              max={duration || 100}
-              value={position}
-              onChange={(e) => onSeek(Number(e.target.value))}
-              aria-label="Seek"
-            />
-          </div>
-          <span className="vt__time">{TimeFormatter.format(duration)}</span>
-        </div>
-
-        {/* Transport */}
-        <div className="vt__transport" role="group" aria-label="Playback controls">
-          <button
-            className={`vt__btn vt__btn--sm${isShuffled ? ' vt__btn--lit' : ''}`}
-            onClick={onToggleShuffle}
-            aria-label="Shuffle"
-            title="Shuffle"
-          >⇄</button>
-
-          <button className="vt__btn" onClick={onPrev} aria-label="Previous">⏮</button>
-
-          <button
-            className="vt__btn vt__btn--play"
-            onClick={onTogglePlay}
-            aria-label={isPlaying ? 'Pause' : 'Play'}
-          >
-            {isPlaying ? '⏸' : '▶'}
-          </button>
-
-          <button className="vt__btn" onClick={onNext} aria-label="Next">⏭</button>
-
-          <button
-            className={`vt__btn vt__btn--sm${repeatMode !== 'none' ? ' vt__btn--lit' : ''}`}
-            onClick={onToggleRepeat}
-            aria-label="Repeat"
-            title={`Repeat: ${repeatMode}`}
-          >
-            {repeatMode === 'one' ? '🔂' : '🔁'}
-          </button>
-        </div>
-
-        {/* Volume */}
-        <div className="vt__volume" role="group" aria-label="Volume">
-          <span className="vt__vol-icon" aria-hidden="true">🔈</span>
-          <div className="vt__bar vt__bar--vol">
-            <div className="vt__bar-track" />
-            <div className="vt__bar-fill" style={{ width: `${volume * 100}%` }} />
-            <input
-              type="range"
-              className="vt__bar-input"
-              min={0} max={1} step={0.01}
-              value={volume}
-              onChange={(e) => onVolumeChange(Number(e.target.value))}
-              aria-label="Volume"
-            />
-          </div>
-          <span className="vt__vol-icon" aria-hidden="true">🔊</span>
         </div>
       </div>
     </div>

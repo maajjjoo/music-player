@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   COVER SHELF  —  horizontal scrolling album library
+   COVER SHELF  —  vivid light theme · drag-to-reorder · 3D hover
    ═══════════════════════════════════════════════════════════════════════════ */
 
 .shelf {
@@ -9,20 +9,19 @@
   flex-direction: column;
   justify-content: center;
   overflow: hidden;
-  position: relative;
 }
 
-/* Empty state */
+/* ── Empty state ─────────────────────────────────────────────────────────── */
 .shelf--empty {
   align-items: center;
   gap: 16px;
 }
 
 .shelf__empty-icon {
-  font-size: 56px;
-  opacity: 0.15;
+  font-size: 64px;
+  opacity: 0.12;
   font-family: Georgia, serif;
-  color: var(--text-1);
+  color: var(--accent);
 }
 
 .shelf__empty-text {
@@ -30,73 +29,182 @@
   color: var(--text-3);
   font-style: italic;
   text-align: center;
-  max-width: 200px;
-  line-height: 1.6;
+  max-width: 220px;
+  line-height: 1.65;
 }
 
-/* Scrollable track */
+/* ── Scrollable track ────────────────────────────────────────────────────── */
 .shelf__track {
   display: flex;
   flex-direction: row;
-  gap: 20px;
+  gap: 0;
   overflow-x: auto;
-  overflow-y: hidden;
-  padding: 24px 28px 20px;
-  scroll-snap-type: x mandatory;
+  overflow-y: visible;
+  /* Extra vertical padding so lifted covers don't clip */
+  padding: 40px 32px 40px;
+  scroll-snap-type: none;
   -webkit-overflow-scrolling: touch;
-  scrollbar-width: thin;
-  align-items: flex-end;
+  /* Smooth momentum scroll */
+  scroll-behavior: smooth;
+  /* 3D perspective for child transforms */
+  perspective: 1500px;
+  align-items: center;
+  /* Allow scrolling beyond visible area */
+  scroll-padding-right: 200px;
 }
 
-.shelf__track::-webkit-scrollbar {
-  height: 3px;
+/* Hide scrollbar but keep functionality */
+.shelf__track::-webkit-scrollbar { height: 0; }
+
+/* Gradient fade on edges for visual continuity */
+.shelf__track::before {
+  content: '';
+  position: sticky;
+  left: 0;
+  width: 60px;
+  height: 100%;
+  background: linear-gradient(90deg, rgba(250,245,255,0.9) 0%, transparent 100%);
+  pointer-events: none;
+  z-index: 5;
 }
 
-.shelf__track::-webkit-scrollbar-thumb {
-  background: rgba(0,0,0,0.12);
-  border-radius: 2px;
-}
-
-/* Individual cover item */
+/* ── Individual cover item ───────────────────────────────────────────────── */
 .shelf__item {
   flex-shrink: 0;
-  scroll-snap-align: start;
+  scroll-snap-align: none;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 16px;
   cursor: pointer;
-  width: 160px;
-  transition: transform 0.28s cubic-bezier(0.34, 1.4, 0.64, 1);
+  width: min(380px, 70vw);
   outline: none;
+  /* Stacked effect - negative margin to overlap */
+  margin-left: -140px;
+  /* Base 3D transform state */
+  transform: translateY(0) rotateY(0deg) scale(0.9);
+  transform-style: preserve-3d;
+  transition:
+    transform 0.4s cubic-bezier(0.34, 1.5, 0.64, 1),
+    filter 0.4s ease,
+    margin-left 0.4s ease,
+    z-index 0s;
+  filter: brightness(0.85) saturate(0.8);
+  will-change: transform;
+  z-index: 1;
+  /* Animation on add */
+  animation: slideInCover 0.5s cubic-bezier(0.34, 1.5, 0.64, 1);
 }
 
+@keyframes slideInCover {
+  from {
+    opacity: 0;
+    transform: translateY(40px) scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(0.9);
+  }
+}
+
+/* First item - no overlap */
+.shelf__item:first-child {
+  margin-left: 0;
+}
+
+/* Hover: expand and show full cover */
 .shelf__item:hover {
-  transform: translateY(-10px);
+  transform: translateY(-40px) rotateY(0deg) scale(1.1);
+  filter: brightness(1.1) saturate(1.2);
+  z-index: 100;
+  margin-left: -60px;
 }
 
-.shelf__item:hover .shelf__cover {
-  box-shadow:
-    0 20px 50px rgba(0,0,0,0.22),
-    0 8px 20px rgba(0,0,0,0.12);
+.shelf__item:first-child:hover {
+  margin-left: 0;
 }
 
+/* Push next items to the right when hovering */
+.shelf__item:hover ~ .shelf__item {
+  margin-left: -60px;
+}
+
+/* Active (currently playing): always visible */
 .shelf__item--active {
-  transform: translateY(-14px);
+  transform: translateY(-45px) scale(1.15);
+  filter: brightness(1.15) saturate(1.25);
+  z-index: 50;
+  margin-left: -60px;
 }
 
-.shelf__item--active .shelf__cover {
+.shelf__item--active:first-child {
+  margin-left: 0;
+}
+
+/* Drag-over: scale up, vibrant highlight */
+.shelf__item--drag-over {
+  transform: translateY(-25px) scale(1.05);
+  filter: brightness(1.12) saturate(1.25);
+  z-index: 90;
+}
+
+.shelf__item--drag-over .shelf__cover {
   box-shadow:
-    0 24px 60px rgba(0,0,0,0.28),
-    0 0 0 3px var(--accent);
+    0 0 0 4px var(--accent),
+    0 0 20px var(--accent),
+    0 24px 60px rgba(124,58,237,0.4);
 }
 
-/* Cover image wrapper */
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .shelf__item {
+    margin-left: -100px;
+  }
+
+  .shelf__item:hover,
+  .shelf__item--active {
+    margin-left: -40px;
+  }
+
+  .shelf__item:hover ~ .shelf__item {
+    margin-left: -40px;
+  }
+}
+
+@media (max-width: 480px) {
+  .shelf__item {
+    margin-left: -60px;
+  }
+
+  .shelf__item:hover,
+  .shelf__item--active {
+    margin-left: -20px;
+  }
+
+  .shelf__item:hover ~ .shelf__item {
+    margin-left: -20px;
+  }
+}
+
+/* Insert line indicator */
+.shelf__item--drag-over::before {
+  content: '';
+  position: absolute;
+  left: -3px;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  background: linear-gradient(180deg, var(--accent) 0%, transparent 100%);
+  border-radius: 3px;
+  z-index: 20;
+}
+
+/* ── Cover image wrapper ─────────────────────────────────────────────────── */
 .shelf__cover-wrap {
   position: relative;
-  width: 160px;
-  height: 160px;
-  border-radius: 12px;
-  overflow: hidden;
+  width: min(380px, 70vw);
+  height: min(380px, 70vw);
+  border-radius: 24px;
+  overflow: visible;
   flex-shrink: 0;
 }
 
@@ -105,27 +213,99 @@
   height: 100%;
   object-fit: cover;
   display: block;
-  border-radius: 12px;
+  border-radius: 24px;
   box-shadow:
-    0 8px 28px rgba(0,0,0,0.14),
-    0 2px 8px rgba(0,0,0,0.08);
-  transition: box-shadow 0.28s ease;
+    0 20px 50px rgba(0,0,0,0.25),
+    0 8px 20px rgba(0,0,0,0.18);
+  transition: box-shadow 0.4s ease;
   user-select: none;
+  -webkit-user-drag: none;
+  position: relative;
 }
 
-/* Playing bars badge */
+/* Reflection effect */
+.shelf__cover::after {
+  content: '';
+  position: absolute;
+  bottom: -105%;
+  left: 0;
+  right: 0;
+  height: 100%;
+  background-image: inherit;
+  background-size: cover;
+  background-position: center;
+  border-radius: 24px;
+  transform: scaleY(-1);
+  opacity: 0.15;
+  mask-image: linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, transparent 60%);
+  -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+.shelf__item:hover .shelf__cover {
+  box-shadow:
+    0 35px 80px rgba(0,0,0,0.35),
+    0 15px 35px rgba(0,0,0,0.25);
+}
+
+.shelf__item--active .shelf__cover {
+  box-shadow:
+    0 0 0 4px var(--accent),
+    0 0 40px var(--accent),
+    0 40px 90px rgba(168,85,247,0.4),
+    0 0 0 8px rgba(168,85,247,0.1);
+}
+
+/* ── Hover overlay ───────────────────────────────────────────────────────── */
+.shelf__overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+  background: rgba(124,58,237,0.4);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.22s ease;
+}
+
+.shelf__item:hover .shelf__overlay { opacity: 1; }
+.shelf__item--active .shelf__overlay { opacity: 0; } /* hide when playing */
+
+.shelf__overlay-play {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(255,255,255,0.92) 100%);
+  color: var(--accent);
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.25), 0 0 20px rgba(124,58,237,0.3);
+  transform: scale(0.75);
+  transition: transform 0.22s cubic-bezier(0.34, 1.5, 0.64, 1);
+  padding-left: 3px; /* optical center for ▶ */
+}
+
+.shelf__item:hover .shelf__overlay-play { transform: scale(1); }
+
+/* ── Playing bars badge ──────────────────────────────────────────────────── */
 .shelf__playing-badge {
   position: absolute;
-  bottom: 10px;
-  left: 10px;
+  bottom: 12px;
+  left: 12px;
   display: flex;
   align-items: flex-end;
   gap: 3px;
-  height: 20px;
-  background: rgba(0,0,0,0.55);
-  backdrop-filter: blur(6px);
-  border-radius: 6px;
-  padding: 4px 7px;
+  height: 22px;
+  background: linear-gradient(135deg, var(--accent) 0%, #6d28d9 100%);
+  backdrop-filter: blur(10px);
+  border-radius: 8px;
+  padding: 5px 8px;
+  box-shadow: 0 4px 16px rgba(124,58,237,0.4);
 }
 
 .shelf__bar {
@@ -133,63 +313,93 @@
   width: 3px;
   border-radius: 2px;
   background: #fff;
-  animation: barBounce 0.8s ease-in-out infinite alternate;
+  animation: barBounce 0.7s ease-in-out infinite alternate;
+  box-shadow: 0 0 8px rgba(255,255,255,0.6);
 }
 
-.shelf__bar:nth-child(1) { height: 8px;  animation-delay: 0s; }
-.shelf__bar:nth-child(2) { height: 14px; animation-delay: 0.15s; }
-.shelf__bar:nth-child(3) { height: 10px; animation-delay: 0.3s; }
+.shelf__bar:nth-child(1) { height: 6px;  animation-delay: 0s; }
+.shelf__bar:nth-child(2) { height: 14px; animation-delay: 0.12s; }
+.shelf__bar:nth-child(3) { height: 10px; animation-delay: 0.24s; }
+.shelf__bar:nth-child(4) { height: 8px;  animation-delay: 0.36s; }
 
 @keyframes barBounce {
-  from { transform: scaleY(0.4); }
-  to   { transform: scaleY(1); }
+  from { transform: scaleY(0.35); opacity: 0.7; }
+  to   { transform: scaleY(1);    opacity: 1; }
 }
 
-/* Remove button */
+/* ── Remove button ───────────────────────────────────────────────────────── */
 .shelf__remove {
   position: absolute;
-  top: 7px;
-  right: 7px;
-  width: 24px;
-  height: 24px;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
-  background: rgba(0,0,0,0.55);
-  backdrop-filter: blur(6px);
-  color: #fff;
-  font-size: 11px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.88) 100%);
+  backdrop-filter: blur(10px);
+  color: var(--accent-2);
+  font-size: 12px;
+  font-weight: 700;
   display: grid;
   place-items: center;
   opacity: 0;
-  transition: opacity 0.18s ease, transform 0.18s ease;
+  transition: opacity 0.18s ease, transform 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
   cursor: pointer;
   border: none;
+  box-shadow: 0 3px 12px rgba(0,0,0,0.18);
 }
 
-.shelf__item:hover .shelf__remove {
-  opacity: 1;
-}
+.shelf__item:hover .shelf__remove { opacity: 1; }
 
 .shelf__remove:hover {
-  background: rgba(220, 50, 50, 0.8);
-  transform: scale(1.15);
+  background: linear-gradient(135deg, var(--accent-2) 0%, #be185d 100%);
+  color: #fff;
+  transform: scale(1.2);
+  box-shadow: 0 6px 20px rgba(236,72,153,0.35);
 }
 
-/* Text info */
+/* ── Drag handle hint ────────────────────────────────────────────────────── */
+.shelf__drag-hint {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.85) 100%);
+  backdrop-filter: blur(10px);
+  color: var(--accent);
+  font-size: 15px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  transition: opacity 0.18s ease, transform 0.18s ease, background 0.18s ease;
+  cursor: grab;
+  box-shadow: 0 3px 12px rgba(0,0,0,0.15);
+}
+
+.shelf__item:hover .shelf__drag-hint { opacity: 1; }
+.shelf__drag-hint:active { cursor: grabbing; }
+
+/* ── Text info ───────────────────────────────────────────────────────────── */
 .shelf__info {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: 0 2px;
+  gap: 3px;
+  padding: 0 3px;
+  position: relative;
 }
 
 .shelf__song-title {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--text-1);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   line-height: 1.3;
+  transition: color 0.2s ease;
 }
 
 .shelf__song-artist {
@@ -207,7 +417,30 @@
   margin-top: 1px;
 }
 
-/* Active item text highlight */
-.shelf__item--active .shelf__song-title {
-  color: var(--accent);
+/* Active text */
+.shelf__item--active .shelf__song-title { color: var(--accent); }
+
+/* Tooltip on hover */
+.shelf__item:hover .shelf__info::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.9);
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  animation: tooltipFadeIn 0.2s ease 0.5s forwards;
+  z-index: 1000;
+}
+
+@keyframes tooltipFadeIn {
+  to {
+    opacity: 1;
+  }
 }

@@ -11,22 +11,21 @@ interface SearchBarProps {
   onAddAtPosition: (song: Song, position: number) => void;
   onPlayNow: (song: Song) => void;
   queueSize: number;
+  onNotification?: (message: string) => void;
+  songs?: Array<{ song: Song }>;
 }
 
 export function SearchBar({
   query,
   onQueryChange,
   onAddSong,
-  onAddToStart,
-  onAddAtPosition,
   onPlayNow,
-  queueSize,
+  onNotification,
+  songs = [],
 }: SearchBarProps) {
   const [results, setResults] = useState<Song[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [positionInputId, setPositionInputId] = useState<string | null>(null);
-  const [positionValue, setPositionValue] = useState('');
 
   async function handleSearch(value: string) {
     onQueryChange(value);
@@ -34,7 +33,6 @@ export function SearchBar({
       setResults([]);
       return;
     }
-
     setIsSearching(true);
     setError(null);
     try {
@@ -54,126 +52,71 @@ export function SearchBar({
     onQueryChange('');
   }
 
-  function handleAddToEnd(song: Song) {
-    onAddSong(song);
-    setResults([]);
-    onQueryChange('');
-  }
-
-  function handleAddToStart(song: Song) {
-    onAddToStart(song);
-    setResults([]);
-    onQueryChange('');
-  }
-
-  function handleAddAtPosition(song: Song) {
-    const pos = parseInt(positionValue);
-    if (!isNaN(pos) && pos >= 0) {
-      onAddAtPosition(song, pos);
-    } else {
-      onAddSong(song);
+  function handleAddToQueue(song: Song) {
+    // Check if song already exists in queue
+    const exists = songs.some(node => node.song.id === song.id);
+    if (exists) {
+      onNotification?.(`⚠ ${song.title} is already in queue`);
+      return;
     }
-    setPositionInputId(null);
-    setPositionValue('');
+    onAddSong(song);
+    onNotification?.(`✓ ${song.title} added to queue`);
+    // Keep results open so user can add more
+  }
+
+  function dismiss() {
     setResults([]);
     onQueryChange('');
   }
 
   return (
-    <div className="search-bar">
-      <div className="search-bar__input-wrapper">
-        <span className="search-bar__icon" aria-hidden="true">🔍</span>
+    <div className="sb">
+      <div className="sb__wrap">
+        <span className="sb__icon" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+        </span>
         <input
-          className="search-bar__input"
+          className="sb__input"
           type="search"
-          placeholder="Search songs, artists..."
+          placeholder="Search songs, artists, albums…"
           value={query}
           onChange={(e) => handleSearch(e.target.value)}
           aria-label="Search songs"
+          autoComplete="off"
         />
-        {isSearching && <span className="search-bar__spinner" aria-hidden="true" />}
+        {isSearching && <span className="sb__spinner" aria-hidden="true" />}
+        {query && !isSearching && (
+          <button className="sb__clear" onClick={dismiss} aria-label="Clear search">✕</button>
+        )}
       </div>
 
-      {error && <p className="search-bar__error">{error}</p>}
+      {error && <p className="sb__error">{error}</p>}
 
       {results.length > 0 && (
-        <ul className="search-bar__results" role="listbox" aria-label="Search results">
+        <ul className="sb__results" role="listbox" aria-label="Search results">
           {results.map((song) => (
-            <li key={song.id} className="search-bar__result" role="option">
-              <img
-                className="search-bar__result-art"
-                src={song.albumArt}
-                alt={song.album}
-              />
-              <div className="search-bar__result-info">
-                <span className="search-bar__result-title">{song.title}</span>
-                <span className="search-bar__result-artist">{song.artist}</span>
+            <li key={song.id} className="sb__result" role="option">
+              <img className="sb__art" src={song.albumArt} alt={song.album} />
+              <div className="sb__info">
+                <span className="sb__song-title">{song.title}</span>
+                <span className="sb__song-artist">{song.artist}</span>
               </div>
-
-              {positionInputId === song.id ? (
-                <div className="search-bar__position">
-                  <input
-                    className="search-bar__position-input"
-                    type="number"
-                    min={0}
-                    max={queueSize}
-                    placeholder={`0–${queueSize}`}
-                    value={positionValue}
-                    onChange={(e) => setPositionValue(e.target.value)}
-                    autoFocus
-                    aria-label="Position in queue"
-                  />
-                  <button
-                    className="search-bar__add-btn"
-                    onClick={() => handleAddAtPosition(song)}
-                    aria-label="Confirm position"
-                  >
-                    ✓
-                  </button>
-                  <button
-                    className="search-bar__cancel-btn"
-                    onClick={() => { setPositionInputId(null); setPositionValue(''); }}
-                    aria-label="Cancel"
-                  >
-                    ✕
-                  </button>
-                </div>
-              ) : (
-                <div className="search-bar__actions">
-                  <button
-                    className="search-bar__play-btn"
-                    onClick={() => handlePlayNow(song)}
-                    aria-label={`Play ${song.title} now`}
-                    title="Play now"
-                  >
-                    ▶
-                  </button>
-                  <button
-                    className="search-bar__start-btn"
-                    onClick={() => handleAddToStart(song)}
-                    aria-label={`Add ${song.title} to start of queue`}
-                    title="Add to start"
-                  >
-                    ⇤
-                  </button>
-                  <button
-                    className="search-bar__add-btn"
-                    onClick={() => handleAddToEnd(song)}
-                    aria-label={`Add ${song.title} to end of queue`}
-                    title="Add to end"
-                  >
-                    +
-                  </button>
-                  <button
-                    className="search-bar__position-btn"
-                    onClick={() => { setPositionInputId(song.id); setPositionValue(''); }}
-                    aria-label={`Add ${song.title} at position`}
-                    title="Add at position"
-                  >
-                    #
-                  </button>
-                </div>
-              )}
+              <div className="sb__actions">
+                <button
+                  className="sb__btn sb__btn--play"
+                  onClick={() => handlePlayNow(song)}
+                  aria-label={`Play ${song.title} now`}
+                  title="Play now"
+                >▶</button>
+                <button
+                  className="sb__btn sb__btn--add"
+                  onClick={() => handleAddToQueue(song)}
+                  aria-label={`Add ${song.title} to queue`}
+                  title="Add to queue"
+                >+ Queue</button>
+              </div>
             </li>
           ))}
         </ul>
