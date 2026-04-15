@@ -16,7 +16,7 @@ export function SearchBar({ query, onQueryChange, onAddSong }: SearchBarProps) {
 
   async function handleSearch(value: string) {
     onQueryChange(value);
-    if (!value.trim()) {
+    if (!value.trim() || value.trim().length < 2) {
       setResults([]);
       return;
     }

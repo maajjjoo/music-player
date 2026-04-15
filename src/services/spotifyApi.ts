@@ -53,21 +53,13 @@ export async function searchTracks(query: string): Promise<Song[]> {
 }
 
 export async function getRecommendations(): Promise<Song[]> {
-  // Get top tracks as seed for recommendations
-  const topTracks = await apiFetch<{ items: SpotifyTrack[] }>(
-    '/me/top/tracks?limit=5&time_range=short_term'
-  );
-
-  if (!topTracks.items.length) return [];
-
-  const seedTracks = topTracks.items
-    .slice(0, 5)
-    .map((t) => t.id)
-    .join(',');
-
-  const data = await apiFetch<{ tracks: SpotifyTrack[] }>(
-    `/recommendations?seed_tracks=${seedTracks}&limit=20`
-  );
-
-  return data.tracks.map(mapTrackToSong);
+  // Use featured playlists as seed — doesn't require user-top-read scope
+  try {
+    const data = await apiFetch<{ tracks: SpotifyTrack[] }>(
+      `/recommendations?seed_genres=pop,rock,hip-hop&limit=20`
+    );
+    return data.tracks.map(mapTrackToSong);
+  } catch {
+    return [];
+  }
 }
