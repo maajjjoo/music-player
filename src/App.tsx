@@ -1,15 +1,16 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import type { Song } from './models/Song';
 import { usePlaylist } from './hooks/usePlaylist';
 import { useAudioPlayer } from './hooks/useAudioPlayer';
 import { getDefaultSongs } from './services/itunesApi';
-import { Player } from './components/Player/Player';
+import { Vinyl } from './components/Vinyl/Vinyl';
 import { Playlist } from './components/Playlist/Playlist';
 import { SearchBar } from './components/SearchBar/SearchBar';
 import './App.css';
 
 export default function App() {
   const playlist = usePlaylist();
+  const [bgColor, setBgColor] = useState('#e8d5ff');
 
   const handleSongEnded = useCallback(() => {
     const next = playlist.playNext();
@@ -21,7 +22,6 @@ export default function App() {
 
   const player = useAudioPlayer(handleSongEnded);
 
-  // Load default songs on mount
   useEffect(() => {
     getDefaultSongs()
       .then((songs) => {
@@ -68,9 +68,23 @@ export default function App() {
   const filteredSongs = playlist.getFilteredSongs();
 
   return (
-    <div className="app">
+    <div
+      className="app"
+      style={{
+        '--dynamic-color': bgColor,
+        '--dynamic-color-light': bgColor + '55',
+      } as React.CSSProperties}
+    >
+      {/* Dynamic background blobs */}
+      <div className="app__bg">
+        <div className="app__blob app__blob--1" />
+        <div className="app__blob app__blob--2" />
+        <div className="app__blob app__blob--3" />
+      </div>
+
+      {/* Header */}
       <header className="app__header">
-        <h1 className="app__logo">♫ Music Player</h1>
+        <h1 className="app__logo">♫ Vinyl</h1>
         <SearchBar
           query={playlist.searchQuery}
           onQueryChange={playlist.setSearchQuery}
@@ -81,35 +95,43 @@ export default function App() {
         />
       </header>
 
+      {/* Main two-panel layout */}
       <main className="app__main">
-        <Playlist
-          songs={filteredSongs}
-          currentSong={playlist.currentSong}
-          showFavoritesOnly={playlist.showFavoritesOnly}
-          onPlay={handlePlaySong}
-          onRemove={playlist.removeSong}
-          onToggleFavorite={playlist.toggleFavorite}
-          onToggleFavoritesFilter={playlist.toggleFavoritesFilter}
-          onReorder={playlist.reorderSong}
-        />
-      </main>
+        {/* Left: Vinyl player */}
+        <div className="app__vinyl-panel">
+          <Vinyl
+            currentSong={playlist.currentSong}
+            isPlaying={player.isPlaying}
+            position={player.position}
+            duration={player.duration}
+            volume={player.volume}
+            repeatMode={playlist.repeatMode}
+            isShuffled={playlist.isShuffled}
+            onTogglePlay={player.togglePlay}
+            onNext={handleNext}
+            onPrev={handlePrev}
+            onSeek={player.seek}
+            onVolumeChange={player.setVolume}
+            onToggleRepeat={playlist.toggleRepeat}
+            onToggleShuffle={playlist.toggleShuffle}
+            onColorExtracted={setBgColor}
+          />
+        </div>
 
-      <Player
-        currentSong={playlist.currentSong}
-        isPlaying={player.isPlaying}
-        position={player.position}
-        duration={player.duration}
-        volume={player.volume}
-        repeatMode={playlist.repeatMode}
-        isShuffled={playlist.isShuffled}
-        onTogglePlay={player.togglePlay}
-        onNext={handleNext}
-        onPrev={handlePrev}
-        onSeek={player.seek}
-        onVolumeChange={player.setVolume}
-        onToggleRepeat={playlist.toggleRepeat}
-        onToggleShuffle={playlist.toggleShuffle}
-      />
+        {/* Right: Playlist */}
+        <div className="app__playlist-panel">
+          <Playlist
+            songs={filteredSongs}
+            currentSong={playlist.currentSong}
+            showFavoritesOnly={playlist.showFavoritesOnly}
+            onPlay={handlePlaySong}
+            onRemove={playlist.removeSong}
+            onToggleFavorite={playlist.toggleFavorite}
+            onToggleFavoritesFilter={playlist.toggleFavoritesFilter}
+            onReorder={playlist.reorderSong}
+          />
+        </div>
+      </main>
     </div>
   );
 }
