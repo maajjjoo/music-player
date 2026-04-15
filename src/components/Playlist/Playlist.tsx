@@ -12,6 +12,7 @@ interface PlaylistProps {
   onToggleFavorite: (id: string) => void;
   onToggleFavoritesFilter: () => void;
   onReorder: (fromId: string, toId: string) => void;
+  onClose: () => void;
 }
 
 export function Playlist({
@@ -23,6 +24,7 @@ export function Playlist({
   onToggleFavorite,
   onToggleFavoritesFilter,
   onReorder,
+  onClose,
 }: PlaylistProps) {
   const draggedId = useRef<string | null>(null);
 
@@ -41,13 +43,23 @@ export function Playlist({
     <section className="playlist">
       <div className="playlist__header">
         <h2 className="playlist__title">Queue <span className="playlist__count">{songs.length}</span></h2>
-        <button
-          className={`playlist__filter-btn ${showFavoritesOnly ? 'playlist__filter-btn--active' : ''}`}
-          onClick={onToggleFavoritesFilter}
-          aria-pressed={showFavoritesOnly}
-        >
-          {showFavoritesOnly ? '♥ Favorites' : '♡ Favorites'}
-        </button>
+        <div className="playlist__header-actions">
+          <button
+            className={`playlist__filter-btn ${showFavoritesOnly ? 'playlist__filter-btn--active' : ''}`}
+            onClick={onToggleFavoritesFilter}
+            aria-pressed={showFavoritesOnly}
+          >
+            {showFavoritesOnly ? '♥ Favorites' : '♡ Favorites'}
+          </button>
+          <button
+            className="playlist__close-btn"
+            onClick={onClose}
+            aria-label="Close playlist"
+            title="Close playlist"
+          >
+            ✕
+          </button>
+        </div>
       </div>
 
       {songs.length === 0 ? (

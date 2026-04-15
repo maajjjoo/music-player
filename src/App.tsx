@@ -11,6 +11,7 @@ import './App.css';
 export default function App() {
   const playlist = usePlaylist();
   const [bgColor, setBgColor] = useState('#e8d5ff');
+  const [isPlaylistOpen, setIsPlaylistOpen] = useState(false);
 
   const handleSongEnded = useCallback(() => {
     const next = playlist.playNext();
@@ -93,12 +94,21 @@ export default function App() {
           onPlayNow={handlePlayNow}
           queueSize={playlist.songs.length}
         />
+        <button
+          className={`app__playlist-toggle ${isPlaylistOpen ? 'app__playlist-toggle--open' : ''}`}
+          onClick={() => setIsPlaylistOpen(!isPlaylistOpen)}
+          aria-label={isPlaylistOpen ? 'Hide playlist' : 'Show playlist'}
+          title={isPlaylistOpen ? 'Hide playlist' : 'Show playlist'}
+        >
+          <span className="toggle-icon">📀</span>
+          <span className="toggle-text">Queue ({playlist.songs.length})</span>
+        </button>
       </header>
 
-      {/* Main two-panel layout */}
+      {/* Main Content */}
       <main className="app__main">
-        {/* Left: Vinyl player */}
-        <div className="app__vinyl-panel">
+        {/* Vinyl Player */}
+        <div className="app__vinyl-container">
           <Vinyl
             currentSong={playlist.currentSong}
             isPlaying={player.isPlaying}
@@ -118,8 +128,8 @@ export default function App() {
           />
         </div>
 
-        {/* Right: Playlist */}
-        <div className="app__playlist-panel">
+        {/* Playlist Dropdown */}
+        <div className={`app__playlist-dropdown ${isPlaylistOpen ? 'app__playlist-dropdown--open' : ''}`}>
           <Playlist
             songs={filteredSongs}
             currentSong={playlist.currentSong}
@@ -129,6 +139,7 @@ export default function App() {
             onToggleFavorite={playlist.toggleFavorite}
             onToggleFavoritesFilter={playlist.toggleFavoritesFilter}
             onReorder={playlist.reorderSong}
+            onClose={() => setIsPlaylistOpen(false)}
           />
         </div>
       </main>

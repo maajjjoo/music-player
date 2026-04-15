@@ -21,43 +21,42 @@ interface VinylProps {
   onColorExtracted: (color: string) => void;
 }
 
-// Time formatting utility
-const TimeFormatter = {
-  format: (milliseconds: number): string => {
+// Vintage Time Formatter Class
+class VintageTimeFormatter {
+  static format(milliseconds: number): string {
     const totalSeconds = Math.floor(milliseconds / 1000);
     const minutes = Math.floor(totalSeconds / 60);
     const seconds = totalSeconds % 60;
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   }
-};
+}
 
-// Color extraction utility
-const ColorExtractor = {
-  DEFAULT_COLOR: '#c9b8f5',
-  CANVAS_SIZE: 10,
-  PASTEL_MIX_RATIO: 0.5,
+// Vintage Color Extractor Class
+class VintageColorExtractor {
+  private static readonly DEFAULT_SEPIA = '#f4f1e8';
+  private static readonly CANVAS_SIZE = 12;
 
-  extractDominantColor: (imageElement: HTMLImageElement): string => {
+  static extractWarmTone(imageElement: HTMLImageElement): string {
     try {
       const canvas = document.createElement('canvas');
-      canvas.width = ColorExtractor.CANVAS_SIZE;
-      canvas.height = ColorExtractor.CANVAS_SIZE;
+      canvas.width = this.CANVAS_SIZE;
+      canvas.height = this.CANVAS_SIZE;
       
       const context = canvas.getContext('2d');
-      if (!context) return ColorExtractor.DEFAULT_COLOR;
+      if (!context) return this.DEFAULT_SEPIA;
 
-      context.drawImage(imageElement, 0, 0, ColorExtractor.CANVAS_SIZE, ColorExtractor.CANVAS_SIZE);
-      const imageData = context.getImageData(0, 0, ColorExtractor.CANVAS_SIZE, ColorExtractor.CANVAS_SIZE).data;
+      context.drawImage(imageElement, 0, 0, this.CANVAS_SIZE, this.CANVAS_SIZE);
+      const imageData = context.getImageData(0, 0, this.CANVAS_SIZE, this.CANVAS_SIZE).data;
       
-      const averageColor = ColorExtractor.calculateAverageColor(imageData);
-      return ColorExtractor.convertToPastelColor(averageColor);
+      const averageColor = this.calculateAverageColor(imageData);
+      return this.convertToVintageSepia(averageColor);
     } catch (error) {
-      console.warn('Failed to extract color from image:', error);
-      return ColorExtractor.DEFAULT_COLOR;
+      console.warn('Failed to extract vintage color:', error);
+      return this.DEFAULT_SEPIA;
     }
-  },
+  }
 
-  calculateAverageColor: (imageData: Uint8ClampedArray): { r: number; g: number; b: number } => {
+  private static calculateAverageColor(imageData: Uint8ClampedArray): { r: number; g: number; b: number } {
     let totalRed = 0;
     let totalGreen = 0;
     let totalBlue = 0;
@@ -74,57 +73,79 @@ const ColorExtractor = {
       g: totalGreen / pixelCount,
       b: totalBlue / pixelCount
     };
-  },
-
-  convertToPastelColor: (color: { r: number; g: number; b: number }): string => {
-    const pastelRed = Math.floor((color.r + 255) * ColorExtractor.PASTEL_MIX_RATIO);
-    const pastelGreen = Math.floor((color.g + 255) * ColorExtractor.PASTEL_MIX_RATIO);
-    const pastelBlue = Math.floor((color.b + 255) * ColorExtractor.PASTEL_MIX_RATIO);
-    
-    return `rgb(${pastelRed}, ${pastelGreen}, ${pastelBlue})`;
   }
-};
 
-// Custom hook for vinyl animation
-const useVinylAnimation = (isPlaying: boolean) => {
-  const [rotation, setRotation] = useState(0);
-  const rotationRef = useRef(0);
-  const animationFrameRef = useRef<number>(0);
-  const lastTimestampRef = useRef<number>(0);
-  
-  const ROTATION_SPEED = 0.03;
-  const FULL_ROTATION = 360;
+  private static convertToVintageSepia(color: { r: number; g: number; b: number }): string {
+    // Apply sepia tone transformation
+    const sepiaR = Math.min(255, (color.r * 0.393) + (color.g * 0.769) + (color.b * 0.189));
+    const sepiaG = Math.min(255, (color.r * 0.349) + (color.g * 0.686) + (color.b * 0.168));
+    const sepiaB = Math.min(255, (color.r * 0.272) + (color.g * 0.534) + (color.b * 0.131));
+    
+    // Blend with warm cream for vintage feel
+    const vintageR = Math.floor((sepiaR + 250) * 0.6);
+    const vintageG = Math.floor((sepiaG + 247) * 0.6);
+    const vintageB = Math.floor((sepiaB + 240) * 0.6);
+    
+    return `rgb(${vintageR}, ${vintageG}, ${vintageB})`;
+  }
+}
 
-  const startAnimation = useCallback(() => {
+// Vintage Turntable Animation Controller
+const createVinylTurntableController = (onRotationUpdate: (rotation: number) => void) => {
+  let rotationValue = 0;
+  let animationFrameId = 0;
+  let lastTimestamp = 0;
+  const VINTAGE_RPM = 33.33; // Classic 33⅓ RPM
+  const ROTATION_SPEED = (VINTAGE_RPM * 360) / (60 * 1000); // degrees per millisecond
+
+  const startSpinning = (): void => {
     const animate = (timestamp: number) => {
-      if (lastTimestampRef.current) {
-        const deltaTime = timestamp - lastTimestampRef.current;
-        rotationRef.current = (rotationRef.current + deltaTime * ROTATION_SPEED) % FULL_ROTATION;
-        setRotation(rotationRef.current);
+      if (lastTimestamp) {
+        const deltaTime = timestamp - lastTimestamp;
+        rotationValue = (rotationValue + deltaTime * ROTATION_SPEED) % 360;
+        onRotationUpdate(rotationValue);
       }
-      lastTimestampRef.current = timestamp;
-      animationFrameRef.current = requestAnimationFrame(animate);
+      lastTimestamp = timestamp;
+      animationFrameId = requestAnimationFrame(animate);
     };
     
-    animationFrameRef.current = requestAnimationFrame(animate);
-  }, []);
+    animationFrameId = requestAnimationFrame(animate);
+  };
 
-  const stopAnimation = useCallback(() => {
-    cancelAnimationFrame(animationFrameRef.current);
-    lastTimestampRef.current = 0;
+  const stopSpinning = (): void => {
+    cancelAnimationFrame(animationFrameId);
+    lastTimestamp = 0;
+  };
+
+  const cleanup = (): void => {
+    stopSpinning();
+  };
+
+  return { startSpinning, stopSpinning, cleanup };
+};
+
+// Custom hook for vintage vinyl animation
+const useVintageVinylAnimation = (isPlaying: boolean) => {
+  const [rotation, setRotation] = useState(0);
+  const controllerRef = useRef<ReturnType<typeof createVinylTurntableController> | null>(null);
+
+  useEffect(() => {
+    controllerRef.current = createVinylTurntableController(setRotation);
+    return () => {
+      controllerRef.current?.cleanup();
+    };
   }, []);
 
   useEffect(() => {
-    if (isPlaying) {
-      startAnimation();
-    } else {
-      stopAnimation();
-    }
+    const controller = controllerRef.current;
+    if (!controller) return;
 
-    return () => {
-      stopAnimation();
-    };
-  }, [isPlaying, startAnimation, stopAnimation]);
+    if (isPlaying) {
+      controller.startSpinning();
+    } else {
+      controller.stopSpinning();
+    }
+  }, [isPlaying]);
 
   return rotation;
 };
@@ -148,143 +169,186 @@ export function Vinyl({
 }: VinylProps) {
   const song = currentSong?.song;
   const imageRef = useRef<HTMLImageElement>(null);
-  const rotation = useVinylAnimation(isPlaying);
+  const rotation = useVintageVinylAnimation(isPlaying);
 
-  // Handle image load and color extraction
-  const handleImageLoad = (): void => {
+  // Handle vintage color extraction
+  const handleImageLoad = useCallback((): void => {
     if (imageRef.current) {
-      const extractedColor = ColorExtractor.extractDominantColor(imageRef.current);
-      onColorExtracted(extractedColor);
+      const vintageColor = VintageColorExtractor.extractWarmTone(imageRef.current);
+      onColorExtracted(vintageColor);
     }
-  };
+  }, [onColorExtracted]);
+
+  const [soundWaveHeights] = useState<string[]>(() =>
+    Array.from({ length: 12 }, () => `${20 + Math.random() * 30}px`)
+  );
 
   const progressPercentage = duration > 0 ? (position / duration) * 100 : 0;
 
   return (
-    <div className="vinyl-panel">
-      {/* Enhanced Turntable Base */}
-      <div className="turntable">
-        {/* Tonearm */}
-        <div className={`tonearm ${isPlaying ? 'tonearm--playing' : ''}`}>
-          <div className="tonearm__arm" />
-          <div className="tonearm__head" />
+    <div className={`vintage-turntable ${isPlaying ? 'vintage-turntable--playing' : ''}`}>
+      {/* Turntable Base */}
+      <div className="turntable-base">
+        {/* Vintage Tonearm */}
+        <div className={`vintage-tonearm ${isPlaying ? 'vintage-tonearm--playing' : ''}`}>
+          <div className="tonearm-pivot" />
+          <div className="tonearm-arm" />
+          <div className="tonearm-cartridge" />
         </div>
 
-        {/* Larger Vinyl Disc */}
+        {/* Vintage Vinyl Record */}
         <div
-          className="vinyl-disc"
+          className="vintage-vinyl-record"
           style={{ transform: `rotate(${rotation}deg)` }}
         >
-          {/* Enhanced Grooves */}
-          <div className="vinyl-disc__grooves" />
-
-          {/* Larger Center Label with Album Art */}
-          <div className="vinyl-disc__label">
+          {/* Sound Wave Visualizer */}
+          {isPlaying && (
+            <div className="sound-wave-visualizer">
+              {Array.from({ length: 12 }, (_, i) => (
+                <div
+                  key={i}
+                  className="sound-wave-bar"
+                  style={{
+                    animationDelay: `${i * 0.1}s`,
+                    height: soundWaveHeights[i]
+                  }}
+                />
+              ))}
+            </div>
+          )}
+          
+          {/* Record Grooves */}
+          <div className="record-grooves" />
+          
+          {/* Center Label */}
+          <div className="record-center-label">
             {song?.albumArt ? (
               <img
                 ref={imageRef}
                 src={song.albumArt}
                 alt={song.album}
-                className="vinyl-disc__art"
+                className="record-album-art"
                 onLoad={handleImageLoad}
                 crossOrigin="anonymous"
               />
             ) : (
-              <div className="vinyl-disc__art vinyl-disc__art--empty">♫</div>
+              <div className="record-album-art record-album-art--empty">
+                <span className="vintage-music-note">♪</span>
+              </div>
             )}
+            
+            {/* Song Info Overlay */}
+            <div className="record-song-overlay">
+              <div className="record-song-title">
+                {song?.title ?? 'Select a Record'}
+              </div>
+              <div className="record-song-artist">
+                {song?.artist ?? ''}
+              </div>
+            </div>
           </div>
 
-          {/* Center Hole */}
-          <div className="vinyl-disc__hole" />
+          {/* Center Spindle */}
+          <div className="record-spindle" />
         </div>
+
+        {/* Turntable Platter */}
+        <div className="turntable-platter" />
       </div>
 
-      {/* Song Information */}
-      <div className="vinyl-info">
-        <h2 className="vinyl-info__title">
-          {song?.title ?? 'No song selected'}
-        </h2>
-        <p className="vinyl-info__artist">{song?.artist ?? ''}</p>
-      </div>
+      {/* Vintage Control Panel */}
+      <div className="vintage-control-panel">
+        {/* Progress Display */}
+        <div className="vintage-progress-display">
+          <div className="progress-time-display">
+            <span className="time-current">{VintageTimeFormatter.format(position)}</span>
+            <span className="time-separator">•</span>
+            <span className="time-total">{VintageTimeFormatter.format(duration)}</span>
+          </div>
+          
+          <div className="vintage-progress-track">
+            <input
+              type="range"
+              className="vintage-progress-slider"
+              min={0}
+              max={duration || 100}
+              value={position}
+              onChange={(e) => onSeek(Number(e.target.value))}
+              aria-label="Track Progress"
+            />
+            <div 
+              className="progress-fill" 
+              style={{ width: `${progressPercentage}%` }} 
+            />
+          </div>
+        </div>
 
-      {/* Progress Bar */}
-      <div className="vinyl-progress">
-        <span className="vinyl-progress__time">{TimeFormatter.format(position)}</span>
-        <input
-          type="range"
-          className="vinyl-progress__bar"
-          min={0}
-          max={duration || 100}
-          value={position}
-          onChange={(e) => onSeek(Number(e.target.value))}
-          aria-label="Seek"
-        />
-        <span className="vinyl-progress__time">{TimeFormatter.format(duration)}</span>
-      </div>
+        {/* Transport Controls */}
+        <div className="vintage-transport-controls">
+          <button
+            className={`vintage-control-btn shuffle-btn ${isShuffled ? 'active' : ''}`}
+            onClick={onToggleShuffle}
+            aria-label="Shuffle"
+            title="Shuffle Playlist"
+          >
+            <span className="btn-icon">⇄</span>
+          </button>
 
-      {/* Control Buttons */}
-      <div className="vinyl-controls">
-        <button
-          className={`vinyl-btn ${isShuffled ? 'vinyl-btn--active' : ''}`}
-          onClick={onToggleShuffle}
-          aria-label="Shuffle"
-          title="Shuffle"
-        >⇄</button>
+          <button 
+            className="vintage-control-btn prev-btn" 
+            onClick={onPrev} 
+            aria-label="Previous Track"
+          >
+            <span className="btn-icon">⏮</span>
+          </button>
 
-        <button className="vinyl-btn vinyl-btn--nav" onClick={onPrev} aria-label="Previous">
-          ⏮
-        </button>
+          <button
+            className="vintage-control-btn play-btn"
+            onClick={onTogglePlay}
+            aria-label={isPlaying ? 'Pause' : 'Play'}
+          >
+            <span className="btn-icon">
+              {isPlaying ? '⏸' : '▶'}
+            </span>
+          </button>
 
-        <button
-          className="vinyl-btn vinyl-btn--play"
-          onClick={onTogglePlay}
-          aria-label={isPlaying ? 'Pause' : 'Play'}
-        >
-          {isPlaying ? '⏸' : '▶'}
-        </button>
+          <button 
+            className="vintage-control-btn next-btn" 
+            onClick={onNext} 
+            aria-label="Next Track"
+          >
+            <span className="btn-icon">⏭</span>
+          </button>
 
-        <button className="vinyl-btn vinyl-btn--nav" onClick={onNext} aria-label="Next">
-          ⏭
-        </button>
+          <button
+            className={`vintage-control-btn repeat-btn ${repeatMode !== 'none' ? 'active' : ''}`}
+            onClick={onToggleRepeat}
+            aria-label="Repeat"
+            title={`Repeat: ${repeatMode}`}
+          >
+            <span className="btn-icon">
+              {repeatMode === 'one' ? '🔂' : '🔁'}
+            </span>
+          </button>
+        </div>
 
-        <button
-          className={`vinyl-btn ${repeatMode !== 'none' ? 'vinyl-btn--active' : ''}`}
-          onClick={onToggleRepeat}
-          aria-label="Repeat"
-          title={`Repeat: ${repeatMode}`}
-        >
-          {repeatMode === 'one' ? '🔂' : '🔁'}
-        </button>
-      </div>
-
-      {/* Volume Control */}
-      <div className="vinyl-volume">
-        <span aria-hidden="true">🔈</span>
-        <input
-          type="range"
-          className="vinyl-volume__slider"
-          min={0}
-          max={1}
-          step={0.01}
-          value={volume}
-          onChange={(e) => onVolumeChange(Number(e.target.value))}
-          aria-label="Volume"
-        />
-        <span aria-hidden="true">🔊</span>
-      </div>
-
-      {/* Enhanced Progress Ring */}
-      <div className="vinyl-progress-ring">
-        <svg viewBox="0 0 100 4" preserveAspectRatio="none">
-          <rect x="0" y="0" width="100" height="4" rx="2" fill="rgba(167,139,250,0.2)" />
-          <rect x="0" y="0" width={progressPercentage} height="4" rx="2" fill="url(#progressGradient)" />
-          <defs>
-            <linearGradient id="progressGradient" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor="#a78bfa" />
-              <stop offset="100%" stopColor="#f9a8d4" />
-            </linearGradient>
-          </defs>
-        </svg>
+        {/* Volume Control */}
+        <div className="vintage-volume-control">
+          <span className="volume-icon volume-low" aria-hidden="true">🔈</span>
+          <div className="volume-slider-container">
+            <input
+              type="range"
+              className="vintage-volume-slider"
+              min={0}
+              max={1}
+              step={0.01}
+              value={volume}
+              onChange={(e) => onVolumeChange(Number(e.target.value))}
+              aria-label="Volume"
+            />
+          </div>
+          <span className="volume-icon volume-high" aria-hidden="true">🔊</span>
+        </div>
       </div>
     </div>
   );

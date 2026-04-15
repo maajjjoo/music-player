@@ -4,94 +4,113 @@
   height: 100vh;
   overflow: hidden;
   position: relative;
+  background: var(--vintage-cream);
 }
 
-/* ── Dynamic background ──────────────────────────────────────────────────── */
+/* ── Vintage Background Pattern ──────────────────────────────────────────── */
 .app__bg {
   position: fixed;
   inset: 0;
   z-index: 0;
   overflow: hidden;
   pointer-events: none;
+  background-image: var(--paper-texture);
 }
 
 .app__blob {
   position: absolute;
   border-radius: 50%;
-  filter: blur(80px);
-  opacity: 0.5;
-  transition: background 2s ease;
+  filter: blur(120px);
+  opacity: 0.3;
+  transition: background 3s ease;
 }
 
 .app__blob--1 {
-  width: 600px;
-  height: 600px;
-  top: -200px;
-  left: -100px;
-  background: var(--dynamic-color, #e8d5ff);
-  animation: blobFloat1 12s ease-in-out infinite;
+  width: 800px;
+  height: 800px;
+  top: -300px;
+  left: -200px;
+  background: radial-gradient(circle, var(--vintage-rose) 0%, transparent 70%);
+  animation: vintageFloat1 20s ease-in-out infinite;
 }
 
 .app__blob--2 {
-  width: 500px;
-  height: 500px;
-  bottom: -150px;
-  right: -100px;
-  background: #ffd5e8;
-  animation: blobFloat2 15s ease-in-out infinite;
+  width: 600px;
+  height: 600px;
+  bottom: -200px;
+  right: -150px;
+  background: radial-gradient(circle, var(--vintage-sage) 0%, transparent 70%);
+  animation: vintageFloat2 25s ease-in-out infinite;
 }
 
 .app__blob--3 {
-  width: 400px;
-  height: 400px;
-  top: 50%;
-  left: 50%;
+  width: 500px;
+  height: 500px;
+  top: 40%;
+  left: 60%;
   transform: translate(-50%, -50%);
-  background: #d5f0ff;
-  animation: blobFloat3 10s ease-in-out infinite;
+  background: radial-gradient(circle, var(--vintage-lavender) 0%, transparent 70%);
+  animation: vintageFloat3 18s ease-in-out infinite;
 }
 
-@keyframes blobFloat1 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(30px, -20px) scale(1.05); }
-  66% { transform: translate(-20px, 30px) scale(0.95); }
+@keyframes vintageFloat1 {
+  0%, 100% { transform: translate(0, 0) scale(1) rotate(0deg); }
+  33% { transform: translate(50px, -30px) scale(1.1) rotate(120deg); }
+  66% { transform: translate(-30px, 40px) scale(0.9) rotate(240deg); }
 }
 
-@keyframes blobFloat2 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(-30px, 20px) scale(1.08); }
-  66% { transform: translate(20px, -30px) scale(0.92); }
+@keyframes vintageFloat2 {
+  0%, 100% { transform: translate(0, 0) scale(1) rotate(0deg); }
+  33% { transform: translate(-40px, 30px) scale(1.15) rotate(-120deg); }
+  66% { transform: translate(30px, -40px) scale(0.85) rotate(-240deg); }
 }
 
-@keyframes blobFloat3 {
-  0%, 100% { transform: translate(-50%, -50%) scale(1); }
-  50% { transform: translate(-50%, -50%) scale(1.15); }
+@keyframes vintageFloat3 {
+  0%, 100% { transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+  50% { transform: translate(-50%, -50%) scale(1.2) rotate(180deg); }
 }
 
-/* ── Header ──────────────────────────────────────────────────────────────── */
+/* ── Vintage Header ──────────────────────────────────────────────────────── */
 .app__header {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 14px 28px;
-  background: rgba(255, 255, 255, 0.5);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border-bottom: 1px solid rgba(167, 139, 250, 0.2);
+  gap: 20px;
+  padding: 18px 32px;
+  background: linear-gradient(135deg, var(--vintage-warm-white) 0%, var(--vintage-beige) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 2px solid var(--border-light);
+  box-shadow: var(--shadow-vintage);
   flex-shrink: 0;
   z-index: 20;
   position: relative;
 }
 
 .app__logo {
-  font-size: 24px;
-  font-weight: 900;
-  background: linear-gradient(135deg, #a78bfa 0%, #f9a8d4 100%);
+  font-size: 28px;
+  font-weight: 700;
+  font-family: 'Georgia', serif;
+  background: linear-gradient(135deg, var(--vintage-gold) 0%, var(--vintage-brass) 50%, var(--vintage-copper) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   white-space: nowrap;
-  letter-spacing: -1px;
+  letter-spacing: -0.5px;
+  text-shadow: 0 2px 4px rgba(139, 69, 19, 0.1);
+  position: relative;
+}
+
+.app__logo::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(135deg, var(--vintage-gold), var(--vintage-brass));
+  border-radius: 8px;
+  opacity: 0.1;
+  z-index: -1;
 }
 
 .app__header .search-bar {
@@ -99,45 +118,154 @@
   padding: 0;
 }
 
-/* ── Main layout ─────────────────────────────────────────────────────────── */
+/* ── Playlist Toggle Button ──────────────────────────────────────────────── */
+.app__playlist-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: 
+    linear-gradient(135deg, var(--vintage-cream) 0%, var(--vintage-beige) 100%);
+  border: 2px solid var(--vintage-bronze);
+  color: var(--vintage-coffee);
+  padding: 12px 20px;
+  border-radius: 25px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'Georgia', serif;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  box-shadow: 0 4px 12px rgba(139, 69, 19, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.app__playlist-toggle::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: 
+    radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.app__playlist-toggle:hover::before {
+  opacity: 1;
+}
+
+.app__playlist-toggle:hover {
+  border-color: var(--vintage-gold);
+  color: var(--vintage-gold);
+  background: 
+    linear-gradient(135deg, var(--vintage-warm-white) 0%, var(--vintage-cream) 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(139, 69, 19, 0.15);
+}
+
+.app__playlist-toggle--open {
+  border-color: var(--vintage-rose);
+  color: var(--vintage-coffee);
+  background: 
+    linear-gradient(135deg, var(--vintage-rose) 0%, rgba(244, 194, 194, 0.8) 100%);
+  box-shadow: 0 4px 12px rgba(244, 194, 194, 0.4);
+  animation: playlistTogglePulse 2s ease-in-out infinite;
+}
+
+@keyframes playlistTogglePulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
+.toggle-icon {
+  font-size: 16px;
+  filter: drop-shadow(0 1px 2px rgba(139, 69, 19, 0.1));
+}
+
+.toggle-text {
+  white-space: nowrap;
+}
+
+/* ── Main Turntable Layout ───────────────────────────────────────────────── */
 .app__main {
   flex: 1;
-  display: grid;
-  grid-template-columns: 380px 1fr;
-  overflow: hidden;
+  display: flex;
+  flex-direction: column;
   position: relative;
   z-index: 1;
 }
 
-/* ── Vinyl panel ─────────────────────────────────────────────────────────── */
-.app__vinyl-panel {
-  background: rgba(255, 255, 255, 0.35);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-right: 1px solid rgba(167, 139, 250, 0.2);
-  overflow-y: auto;
+/* ── Vinyl Container ─────────────────────────────────────────────────────── */
+.app__vinyl-container {
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: linear-gradient(145deg, var(--vintage-paper) 0%, var(--vintage-linen) 100%);
+  position: relative;
 }
 
-/* ── Playlist panel ──────────────────────────────────────────────────────── */
-.app__playlist-panel {
+.app__vinyl-container::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: var(--paper-texture);
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+/* ── Playlist Dropdown ───────────────────────────────────────────────────── */
+.app__playlist-dropdown {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(135deg, var(--vintage-warm-white) 0%, var(--vintage-cream) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 3px solid var(--vintage-gold);
+  box-shadow: 0 -8px 32px rgba(139, 69, 19, 0.15);
+  transform: translateY(100%);
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  max-height: 60vh;
   overflow-y: auto;
-  background: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(10px);
+  z-index: 30;
 }
 
-/* ── Responsive ──────────────────────────────────────────────────────────── */
+.app__playlist-dropdown--open {
+  transform: translateY(0);
+  opacity: 1;
+  visibility: visible;
+}
+
+/* ── Responsive Design ───────────────────────────────────────────────────── */
 @media (max-width: 768px) {
   .app__main {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr;
+    position: relative;
   }
 
-  .app__vinyl-panel {
-    border-right: none;
-    border-bottom: 1px solid rgba(167, 139, 250, 0.2);
-    padding: 16px;
+  .app__vinyl-container {
+    padding: 20px;
+    min-height: 400px;
+  }
+  
+  .app__header {
+    padding: 16px 20px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  
+  .app__logo {
+    font-size: 24px;
+  }
+
+  .app__playlist-toggle {
+    padding: 10px 16px;
+    font-size: 13px;
+  }
+
+  .app__playlist-dropdown {
+    max-height: 50vh;
   }
 }
