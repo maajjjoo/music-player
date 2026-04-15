@@ -23,6 +23,11 @@ export default function App() {
     const code = params.get('code');
     const error = params.get('error');
 
+    console.log('[Auth] pathname:', window.location.pathname);
+    console.log('[Auth] search:', window.location.search);
+    console.log('[Auth] code:', code ? 'present' : 'none');
+    console.log('[Auth] error:', error);
+
     if (error) {
       console.error('Spotify auth error:', error);
       window.history.replaceState({}, '', '/');
@@ -30,12 +35,14 @@ export default function App() {
     }
 
     if (code) {
+      console.log('[Auth] Exchanging code for tokens...');
       exchangeCodeForTokens(code)
         .then(() => {
+          console.log('[Auth] Token exchange successful');
           window.history.replaceState({}, '', '/');
         })
         .catch((err) => {
-          console.error('Token exchange failed:', err);
+          console.error('[Auth] Token exchange failed:', err);
           window.history.replaceState({}, '', '/');
         });
     }
