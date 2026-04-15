@@ -9,6 +9,7 @@ interface AudioPlayerState {
 
 interface AudioPlayerActions {
   play: (url: string) => void;
+  replay: () => void;
   togglePlay: () => void;
   seek: (position: number) => void;
   setVolume: (volume: number) => void;
@@ -93,6 +94,12 @@ export function useAudioPlayer(
     }
   }, []);
 
+  const replay = useCallback(() => {
+    const audio = audioRef.current;
+    audio.currentTime = 0;
+    audio.play().catch(console.error);
+  }, []);
+
   const togglePlay = useCallback(() => {
     const audio = audioRef.current;
     if (audio.paused) {
@@ -111,5 +118,5 @@ export function useAudioPlayer(
     setState((prev) => ({ ...prev, volume }));
   }, []);
 
-  return { ...state, play, togglePlay, seek, setVolume };
+  return { ...state, play, replay, togglePlay, seek, setVolume };
 }

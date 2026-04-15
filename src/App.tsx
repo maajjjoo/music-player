@@ -13,10 +13,26 @@ export default function App() {
   const [bgColor, setBgColor] = useState('#f0ece6');
 
   const handleSongEnded = useCallback(() => {
-    const next = playlist.playNext();
-    if (next?.song.previewUrl) player.play(next.song.previewUrl);
+    if (playlist.repeatMode === 'one') {
+      // Repeat current song - just replay without reloading
+      player.replay();
+    } else if (playlist.repeatMode === 'all') {
+      // Play next song (will wrap to start)
+      const next = playlist.playNext();
+      if (next?.song.previewUrl) player.play(next.song.previewUrl);
+    } else {
+      // repeatMode === 'none'
+      // Only play next if there is a next song
+      const currentIndex = playlist.songs.findIndex(
+        (n) => n.song.id === playlist.currentSong?.song.id
+      );
+      if (currentIndex < playlist.songs.length - 1) {
+        const next = playlist.playNext();
+        if (next?.song.previewUrl) player.play(next.song.previewUrl);
+      }
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [playlist.repeatMode, playlist.currentSong, playlist.songs]);
 
   const player = useAudioPlayer(handleSongEnded);
   const [notification, setNotification] = useState<string | null>(null);
@@ -56,7 +72,8 @@ export default function App() {
     if (prev?.song.previewUrl) player.play(prev.song.previewUrl);
   }
 
-  const allSongs = playlist.getFilteredSongs();
+  // Always show all songs in queue, regardless of search query
+  const allSongs = playlist.songs;
 
   // Save volume to localStorage
   useEffect(() => {
@@ -190,7 +207,8 @@ export default function App() {
               onClick={playlist.toggleRepeat}
               aria-label="Repeat"
             >
-              {playlist.repeatMode === 'one' ? '🔂' : '🔁'}
+              🔁
+              {playlist.repeatMode === 'one' && <span className="app__player-btn-dot" />}
             </button>
           </div>
 

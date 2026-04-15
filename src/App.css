@@ -317,6 +317,7 @@
   font-size: 14px;
   background: transparent;
   color: #666;
+  position: relative;
 }
 
 .app__player-btn--sm:hover {
@@ -326,6 +327,29 @@
 
 .app__player-btn--active {
   color: var(--accent);
+}
+
+.app__player-btn-dot {
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: dotPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes dotPulse {
+  0%, 100% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: translateX(-50%) scale(1.2);
+  }
 }
 
 .app__player-btn--play {
