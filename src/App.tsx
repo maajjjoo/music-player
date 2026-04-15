@@ -1,8 +1,9 @@
-import { useCallback, useState, useEffect } from 'react';
+import { useCallback, useState, useEffect, useMemo } from 'react';
 import type { Song } from './models/Song';
 import { usePlaylist } from './hooks/usePlaylist';
 import { useAudioPlayer } from './hooks/useAudioPlayer';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import { ErrorBoundary } from './components/ErrorBoundary/ErrorBoundary';
 import { Vinyl } from './components/Vinyl/Vinyl';
 import { CoverShelf } from './components/CoverShelf/CoverShelf';
 import { SearchBar } from './components/SearchBar/SearchBar';
@@ -14,9 +15,8 @@ export default function App() {
 
   const handleSongEnded = useCallback(() => {
     if (playlist.repeatMode === 'one') {
-      // Repeat current song once, then disable repeat
+      // Repeat current song - just replay without reloading
       player.replay();
-      playlist.setRepeatMode('none');
     } else if (playlist.repeatMode === 'all') {
       // Play next song (will wrap to start)
       const next = playlist.playNext();
@@ -88,20 +88,33 @@ export default function App() {
     localStorage.setItem('vinyl-volume', player.volume.toString());
   }, [player.volume]);
 
-  // Keyboard shortcuts
-  useKeyboardShortcuts({
+  // Remove unused memoizedHandlers for now
+  // const memoizedHandlers = useMemo(() => ({
+  //   handleNext,
+  //   handlePrev,
+  //   handlePlaySong,
+  //   handleAddToQueue,
+  //   handlePlayNow,
+  // }), [handleNext, handlePrev, handlePlaySong, handleAddToQueue, handlePlayNow]);
+
+  // Memoize keyboard shortcuts
+  const keyboardShortcuts = useMemo(() => ({
     onPlayPause: player.togglePlay,
     onNext: handleNext,
     onPrev: handlePrev,
     onVolumeUp: () => player.setVolume(Math.min(1, player.volume + 0.1)),
     onVolumeDown: () => player.setVolume(Math.max(0, player.volume - 0.1)),
-  });
+  }), [player.togglePlay, handleNext, handlePrev, player.setVolume, player.volume]);
+
+  // Keyboard shortcuts
+  useKeyboardShortcuts(keyboardShortcuts);
 
   return (
-    <div
-      className="app"
-      style={{ '--bg-tint': bgColor } as React.CSSProperties}
-    >
+    <ErrorBoundary>
+      <div
+        className="app"
+        style={{ '--bg-tint': bgColor } as React.CSSProperties}
+      >
       {/* Dynamic tinted background */}
       <div className="app__bg" aria-hidden="true" />
 
@@ -238,13 +251,13 @@ export default function App() {
         </div>
       </footer>
 
-      {/* Notification toast */}
-      {notification && (
-        <div className="app__notification" role="status" aria-live="polite">
-          {notification}
-        </div>
-      )}
-    </div>
+        {notification && (
+          <div className="app__notification" role="status" aria-live="polite">
+            {notification}
+          </div>
+        )}
+      </div>
+    </ErrorBoundary>
   );
 }
 

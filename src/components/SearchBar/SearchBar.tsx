@@ -35,11 +35,23 @@ export function SearchBar({
     }
     setIsSearching(true);
     setError(null);
+    
     try {
       const tracks = await searchTracks(value);
       setResults(tracks);
-    } catch {
-      setError('Search failed. Please try again.');
+    } catch (err: any) {
+      console.error('Search error:', err);
+      
+      // Better error handling
+      if (err.name === 'NetworkError' || err.message?.includes('fetch')) {
+        setError('Network error. Please check your connection and try again.');
+      } else if (err.status === 429) {
+        setError('Too many requests. Please wait a moment and try again.');
+      } else if (err.status === 500) {
+        setError('Server error. Please try again later.');
+      } else {
+        setError('Search failed. Please try again.');
+      }
       setResults([]);
     } finally {
       setIsSearching(false);
