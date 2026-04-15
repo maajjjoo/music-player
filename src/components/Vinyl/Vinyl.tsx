@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import type { SongNode } from '../../models/Song';
 import type { RepeatMode } from '../../hooks/usePlaylist';
 import './Vinyl.css';
@@ -21,38 +21,113 @@ interface VinylProps {
   onColorExtracted: (color: string) => void;
 }
 
-function formatTime(ms: number): string {
-  const total = Math.floor(ms / 1000);
-  const m = Math.floor(total / 60);
-  const s = total % 60;
-  return `${m}:${s.toString().padStart(2, '0')}`;
-}
-
-function extractDominantColor(imgEl: HTMLImageElement): string {
-  try {
-    const canvas = document.createElement('canvas');
-    canvas.width = 10;
-    canvas.height = 10;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return '#c9b8f5';
-    ctx.drawImage(imgEl, 0, 0, 10, 10);
-    const data = ctx.getImageData(0, 0, 10, 10).data;
-    let r = 0, g = 0, b = 0;
-    for (let i = 0; i < data.length; i += 4) {
-      r += data[i];
-      g += data[i + 1];
-      b += data[i + 2];
-    }
-    const count = data.length / 4;
-    // Pastelify: mix with white
-    const pr = Math.floor((r / count + 255) / 2);
-    const pg = Math.floor((g / count + 255) / 2);
-    const pb = Math.floor((b / count + 255) / 2);
-    return `rgb(${pr},${pg},${pb})`;
-  } catch {
-    return '#c9b8f5';
+// Time formatting utility
+const TimeFormatter = {
+  format: (milliseconds: number): string => {
+    const totalSeconds = Math.floor(milliseconds / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   }
-}
+};
+
+// Color extraction utility
+const ColorExtractor = {
+  DEFAULT_COLOR: '#c9b8f5',
+  CANVAS_SIZE: 10,
+  PASTEL_MIX_RATIO: 0.5,
+
+  extractDominantColor: (imageElement: HTMLImageElement): string => {
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = ColorExtractor.CANVAS_SIZE;
+      canvas.height = ColorExtractor.CANVAS_SIZE;
+      
+      const context = canvas.getContext('2d');
+      if (!context) return ColorExtractor.DEFAULT_COLOR;
+
+      context.drawImage(imageElement, 0, 0, ColorExtractor.CANVAS_SIZE, ColorExtractor.CANVAS_SIZE);
+      const imageData = context.getImageData(0, 0, ColorExtractor.CANVAS_SIZE, ColorExtractor.CANVAS_SIZE).data;
+      
+      const averageColor = ColorExtractor.calculateAverageColor(imageData);
+      return ColorExtractor.convertToPastelColor(averageColor);
+    } catch (error) {
+      console.warn('Failed to extract color from image:', error);
+      return ColorExtractor.DEFAULT_COLOR;
+    }
+  },
+
+  calculateAverageColor: (imageData: Uint8ClampedArray): { r: number; g: number; b: number } => {
+    let totalRed = 0;
+    let totalGreen = 0;
+    let totalBlue = 0;
+    
+    for (let i = 0; i < imageData.length; i += 4) {
+      totalRed += imageData[i];
+      totalGreen += imageData[i + 1];
+      totalBlue += imageData[i + 2];
+    }
+    
+    const pixelCount = imageData.length / 4;
+    return {
+      r: totalRed / pixelCount,
+      g: totalGreen / pixelCount,
+      b: totalBlue / pixelCount
+    };
+  },
+
+  convertToPastelColor: (color: { r: number; g: number; b: number }): string => {
+    const pastelRed = Math.floor((color.r + 255) * ColorExtractor.PASTEL_MIX_RATIO);
+    const pastelGreen = Math.floor((color.g + 255) * ColorExtractor.PASTEL_MIX_RATIO);
+    const pastelBlue = Math.floor((color.b + 255) * ColorExtractor.PASTEL_MIX_RATIO);
+    
+    return `rgb(${pastelRed}, ${pastelGreen}, ${pastelBlue})`;
+  }
+};
+
+// Custom hook for vinyl animation
+const useVinylAnimation = (isPlaying: boolean) => {
+  const [rotation, setRotation] = useState(0);
+  const rotationRef = useRef(0);
+  const animationFrameRef = useRef<number>(0);
+  const lastTimestampRef = useRef<number>(0);
+  
+  const ROTATION_SPEED = 0.03;
+  const FULL_ROTATION = 360;
+
+  const startAnimation = useCallback(() => {
+    const animate = (timestamp: number) => {
+      if (lastTimestampRef.current) {
+        const deltaTime = timestamp - lastTimestampRef.current;
+        rotationRef.current = (rotationRef.current + deltaTime * ROTATION_SPEED) % FULL_ROTATION;
+        setRotation(rotationRef.current);
+      }
+      lastTimestampRef.current = timestamp;
+      animationFrameRef.current = requestAnimationFrame(animate);
+    };
+    
+    animationFrameRef.current = requestAnimationFrame(animate);
+  }, []);
+
+  const stopAnimation = useCallback(() => {
+    cancelAnimationFrame(animationFrameRef.current);
+    lastTimestampRef.current = 0;
+  }, []);
+
+  useEffect(() => {
+    if (isPlaying) {
+      startAnimation();
+    } else {
+      stopAnimation();
+    }
+
+    return () => {
+      stopAnimation();
+    };
+  }, [isPlaying, startAnimation, stopAnimation]);
+
+  return rotation;
+};
 
 export function Vinyl({
   currentSong,
@@ -72,45 +147,22 @@ export function Vinyl({
   onColorExtracted,
 }: VinylProps) {
   const song = currentSong?.song;
-  const imgRef = useRef<HTMLImageElement>(null);
-  const [rotation, setRotation] = useState(0);
-  const rotationRef = useRef(0);
-  const animFrameRef = useRef<number>(0);
-  const lastTimeRef = useRef<number>(0);
+  const imageRef = useRef<HTMLImageElement>(null);
+  const rotation = useVinylAnimation(isPlaying);
 
-  // Spin animation
-  useEffect(() => {
-    if (isPlaying) {
-      const animate = (time: number) => {
-        if (lastTimeRef.current) {
-          const delta = time - lastTimeRef.current;
-          rotationRef.current = (rotationRef.current + delta * 0.03) % 360;
-          setRotation(rotationRef.current);
-        }
-        lastTimeRef.current = time;
-        animFrameRef.current = requestAnimationFrame(animate);
-      };
-      animFrameRef.current = requestAnimationFrame(animate);
-    } else {
-      cancelAnimationFrame(animFrameRef.current);
-      lastTimeRef.current = 0;
+  // Handle image load and color extraction
+  const handleImageLoad = (): void => {
+    if (imageRef.current) {
+      const extractedColor = ColorExtractor.extractDominantColor(imageRef.current);
+      onColorExtracted(extractedColor);
     }
-    return () => cancelAnimationFrame(animFrameRef.current);
-  }, [isPlaying]);
+  };
 
-  // Extract color from album art
-  function handleImgLoad() {
-    if (imgRef.current) {
-      const color = extractDominantColor(imgRef.current);
-      onColorExtracted(color);
-    }
-  }
-
-  const progress = duration > 0 ? (position / duration) * 100 : 0;
+  const progressPercentage = duration > 0 ? (position / duration) * 100 : 0;
 
   return (
     <div className="vinyl-panel">
-      {/* Turntable base */}
+      {/* Enhanced Turntable Base */}
       <div className="turntable">
         {/* Tonearm */}
         <div className={`tonearm ${isPlaying ? 'tonearm--playing' : ''}`}>
@@ -118,23 +170,23 @@ export function Vinyl({
           <div className="tonearm__head" />
         </div>
 
-        {/* Vinyl disc */}
+        {/* Larger Vinyl Disc */}
         <div
           className="vinyl-disc"
           style={{ transform: `rotate(${rotation}deg)` }}
         >
-          {/* Grooves */}
+          {/* Enhanced Grooves */}
           <div className="vinyl-disc__grooves" />
 
-          {/* Center label with album art */}
+          {/* Larger Center Label with Album Art */}
           <div className="vinyl-disc__label">
             {song?.albumArt ? (
               <img
-                ref={imgRef}
+                ref={imageRef}
                 src={song.albumArt}
                 alt={song.album}
                 className="vinyl-disc__art"
-                onLoad={handleImgLoad}
+                onLoad={handleImageLoad}
                 crossOrigin="anonymous"
               />
             ) : (
@@ -142,12 +194,12 @@ export function Vinyl({
             )}
           </div>
 
-          {/* Center hole */}
+          {/* Center Hole */}
           <div className="vinyl-disc__hole" />
         </div>
       </div>
 
-      {/* Song info */}
+      {/* Song Information */}
       <div className="vinyl-info">
         <h2 className="vinyl-info__title">
           {song?.title ?? 'No song selected'}
@@ -155,9 +207,9 @@ export function Vinyl({
         <p className="vinyl-info__artist">{song?.artist ?? ''}</p>
       </div>
 
-      {/* Progress bar */}
+      {/* Progress Bar */}
       <div className="vinyl-progress">
-        <span className="vinyl-progress__time">{formatTime(position)}</span>
+        <span className="vinyl-progress__time">{TimeFormatter.format(position)}</span>
         <input
           type="range"
           className="vinyl-progress__bar"
@@ -167,10 +219,10 @@ export function Vinyl({
           onChange={(e) => onSeek(Number(e.target.value))}
           aria-label="Seek"
         />
-        <span className="vinyl-progress__time">{formatTime(duration)}</span>
+        <span className="vinyl-progress__time">{TimeFormatter.format(duration)}</span>
       </div>
 
-      {/* Controls */}
+      {/* Control Buttons */}
       <div className="vinyl-controls">
         <button
           className={`vinyl-btn ${isShuffled ? 'vinyl-btn--active' : ''}`}
@@ -205,7 +257,7 @@ export function Vinyl({
         </button>
       </div>
 
-      {/* Volume */}
+      {/* Volume Control */}
       <div className="vinyl-volume">
         <span aria-hidden="true">🔈</span>
         <input
@@ -221,13 +273,13 @@ export function Vinyl({
         <span aria-hidden="true">🔊</span>
       </div>
 
-      {/* Mini progress indicator */}
+      {/* Enhanced Progress Ring */}
       <div className="vinyl-progress-ring">
         <svg viewBox="0 0 100 4" preserveAspectRatio="none">
           <rect x="0" y="0" width="100" height="4" rx="2" fill="rgba(167,139,250,0.2)" />
-          <rect x="0" y="0" width={progress} height="4" rx="2" fill="url(#progressGrad)" />
+          <rect x="0" y="0" width={progressPercentage} height="4" rx="2" fill="url(#progressGradient)" />
           <defs>
-            <linearGradient id="progressGrad" x1="0" y1="0" x2="1" y2="0">
+            <linearGradient id="progressGradient" x1="0" y1="0" x2="1" y2="0">
               <stop offset="0%" stopColor="#a78bfa" />
               <stop offset="100%" stopColor="#f9a8d4" />
             </linearGradient>
