@@ -194,6 +194,34 @@ export class DoublyLinkedList {
     }
   }
 
+  reorderByIds(fromId: string, toId: string): void {
+    if (fromId === toId) return;
+
+    // Remove the dragged node from its current position
+    const songs = this.toArray().map((n) => n.song);
+    const fromIndex = songs.findIndex((s) => s.id === fromId);
+    const toIndex = songs.findIndex((s) => s.id === toId);
+    if (fromIndex === -1 || toIndex === -1) return;
+
+    const [moved] = songs.splice(fromIndex, 1);
+    songs.splice(toIndex, 0, moved);
+
+    // Rebuild list
+    const currentId = this.currentNode?.song.id;
+    this.head = null;
+    this.tail = null;
+    this._size = 0;
+    this.currentNode = null;
+
+    for (const song of songs) {
+      this.addToEnd(song);
+    }
+
+    if (currentId) {
+      this.currentNode = this.findNodeById(currentId);
+    }
+  }
+
   private findNodeById(id: string): SongNode | null {
     let node: SongNode | null = this.head;
     while (node !== null) {

@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import type { SongNode } from '../../models/Song';
 import { SongItem } from './SongItem';
 import './Playlist.css';
@@ -10,6 +11,7 @@ interface PlaylistProps {
   onRemove: (id: string) => void;
   onToggleFavorite: (id: string) => void;
   onToggleFavoritesFilter: () => void;
+  onReorder: (fromId: string, toId: string) => void;
 }
 
 export function Playlist({
@@ -20,11 +22,25 @@ export function Playlist({
   onRemove,
   onToggleFavorite,
   onToggleFavoritesFilter,
+  onReorder,
 }: PlaylistProps) {
+  const draggedId = useRef<string | null>(null);
+
+  function handleDragStart(id: string) {
+    draggedId.current = id;
+  }
+
+  function handleDrop(targetId: string) {
+    if (draggedId.current && draggedId.current !== targetId) {
+      onReorder(draggedId.current, targetId);
+    }
+    draggedId.current = null;
+  }
+
   return (
     <section className="playlist">
       <div className="playlist__header">
-        <h2 className="playlist__title">Queue</h2>
+        <h2 className="playlist__title">Queue <span className="playlist__count">{songs.length}</span></h2>
         <button
           className={`playlist__filter-btn ${showFavoritesOnly ? 'playlist__filter-btn--active' : ''}`}
           onClick={onToggleFavoritesFilter}
@@ -43,7 +59,7 @@ export function Playlist({
           </p>
         </div>
       ) : (
-        <ul className="playlist__list" role="list">
+        <ul className="playlist__list" role="list" aria-label="Song queue">
           {songs.map((node) => (
             <SongItem
               key={node.song.id}
@@ -52,6 +68,8 @@ export function Playlist({
               onPlay={onPlay}
               onRemove={onRemove}
               onToggleFavorite={onToggleFavorite}
+              onDragStart={handleDragStart}
+              onDrop={handleDrop}
             />
           ))}
         </ul>

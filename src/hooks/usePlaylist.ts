@@ -27,6 +27,7 @@ interface PlaylistActions {
   setSearchQuery: (query: string) => void;
   toggleFavoritesFilter: () => void;
   getFilteredSongs: () => SongNode[];
+  reorderSong: (fromId: string, toId: string) => void;
 }
 
 export function usePlaylist(): PlaylistState & PlaylistActions {
@@ -148,6 +149,14 @@ export function usePlaylist(): PlaylistState & PlaylistActions {
     return nodes;
   }, [state.searchQuery, state.showFavoritesOnly]);
 
+  const reorderSong = useCallback(
+    (fromId: string, toId: string) => {
+      dll.current.reorderByIds(fromId, toId);
+      sync();
+    },
+    [sync]
+  );
+
   return {
     ...state,
     addToEnd,
@@ -163,5 +172,6 @@ export function usePlaylist(): PlaylistState & PlaylistActions {
     setSearchQuery,
     toggleFavoritesFilter,
     getFilteredSongs,
+    reorderSong,
   };
 }

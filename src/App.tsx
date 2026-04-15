@@ -1,4 +1,5 @@
 import { useEffect, useCallback } from 'react';
+import type { Song } from './models/Song';
 import { usePlaylist } from './hooks/usePlaylist';
 import { useAudioPlayer } from './hooks/useAudioPlayer';
 import { getDefaultSongs } from './services/itunesApi';
@@ -15,7 +16,7 @@ export default function App() {
     if (next?.song.previewUrl) {
       player.play(next.song.previewUrl);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const player = useAudioPlayer(handleSongEnded);
@@ -27,7 +28,7 @@ export default function App() {
         songs.forEach((song) => playlist.addToEnd(song));
       })
       .catch(console.error);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function handlePlaySong(id: string) {
@@ -36,6 +37,18 @@ export default function App() {
     if (node?.song.previewUrl) {
       player.play(node.song.previewUrl);
     }
+  }
+
+  function handlePlayNow(song: Song) {
+    playlist.addToEnd(song);
+    playlist.playSong(song.id);
+    if (song.previewUrl) {
+      player.play(song.previewUrl);
+    }
+  }
+
+  function handleAddAtPosition(song: Song, position: number) {
+    playlist.addAtPosition(song, position);
   }
 
   function handleNext() {
@@ -62,6 +75,9 @@ export default function App() {
           query={playlist.searchQuery}
           onQueryChange={playlist.setSearchQuery}
           onAddSong={playlist.addToEnd}
+          onAddAtPosition={handleAddAtPosition}
+          onPlayNow={handlePlayNow}
+          queueSize={playlist.songs.length}
         />
       </header>
 
@@ -74,6 +90,7 @@ export default function App() {
           onRemove={playlist.removeSong}
           onToggleFavorite={playlist.toggleFavorite}
           onToggleFavoritesFilter={playlist.toggleFavoritesFilter}
+          onReorder={playlist.reorderSong}
         />
       </main>
 

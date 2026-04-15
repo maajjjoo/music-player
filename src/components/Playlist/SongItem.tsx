@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import type { SongNode } from '../../models/Song';
 
 interface SongItemProps {
@@ -6,6 +7,8 @@ interface SongItemProps {
   onPlay: (id: string) => void;
   onRemove: (id: string) => void;
   onToggleFavorite: (id: string) => void;
+  onDragStart: (id: string) => void;
+  onDrop: (targetId: string) => void;
 }
 
 function formatDuration(seconds: number): string {
@@ -20,21 +23,40 @@ export function SongItem({
   onPlay,
   onRemove,
   onToggleFavorite,
+  onDragStart,
+  onDrop,
 }: SongItemProps) {
   const { song } = node;
+  const dragOverRef = useRef(false);
 
   return (
-    <li className={`song-item ${isActive ? 'song-item--active' : ''}`}>
+    <li
+      className={`song-item ${isActive ? 'song-item--active' : ''}`}
+      draggable
+      onDragStart={() => onDragStart(song.id)}
+      onDragOver={(e) => {
+        e.preventDefault();
+        dragOverRef.current = true;
+        e.currentTarget.classList.add('song-item--drag-over');
+      }}
+      onDragLeave={(e) => {
+        dragOverRef.current = false;
+        e.currentTarget.classList.remove('song-item--drag-over');
+      }}
+      onDrop={(e) => {
+        e.preventDefault();
+        e.currentTarget.classList.remove('song-item--drag-over');
+        onDrop(song.id);
+      }}
+    >
+      <span className="song-item__drag-handle" aria-hidden="true">⠿</span>
+
       <button
         className="song-item__play-area"
         onClick={() => onPlay(song.id)}
         aria-label={`Play ${song.title}`}
       >
-        <img
-          className="song-item__art"
-          src={song.albumArt}
-          alt={song.album}
-        />
+        <img className="song-item__art" src={song.albumArt} alt={song.album} />
         <div className="song-item__info">
           <span className="song-item__title">{song.title}</span>
           <span className="song-item__artist">{song.artist}</span>
@@ -49,7 +71,6 @@ export function SongItem({
           className={`song-item__btn ${song.isFavorite ? 'song-item__btn--favorite' : ''}`}
           onClick={() => onToggleFavorite(song.id)}
           aria-label={song.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
-          title={song.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
         >
           {song.isFavorite ? '♥' : '♡'}
         </button>
@@ -57,7 +78,6 @@ export function SongItem({
           className="song-item__btn song-item__btn--remove"
           onClick={() => onRemove(song.id)}
           aria-label={`Remove ${song.title}`}
-          title="Remove from playlist"
         >
           ✕
         </button>

@@ -117,15 +117,20 @@
   text-overflow: ellipsis;
 }
 
-.search-bar__add-btn {
+.search-bar__actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.search-bar__play-btn {
   background: #1db954;
   border: none;
   color: #000;
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  font-size: 20px;
-  line-height: 1;
+  font-size: 12px;
   cursor: pointer;
   flex-shrink: 0;
   transition: background 0.15s, transform 0.1s;
@@ -134,7 +139,64 @@
   justify-content: center;
 }
 
-.search-bar__add-btn:hover {
+.search-bar__play-btn:hover {
   background: #1ed760;
   transform: scale(1.1);
+}
+
+.search-bar__position-btn {
+  background: #535353;
+  border: none;
+  color: #fff;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s, transform 0.1s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.search-bar__position-btn:hover {
+  background: #727272;
+  transform: scale(1.1);
+}
+
+.search-bar__position {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.search-bar__position-input {
+  width: 60px;
+  background: #3e3e3e;
+  border: 1px solid #535353;
+  border-radius: 4px;
+  color: #fff;
+  padding: 4px 8px;
+  font-size: 13px;
+  outline: none;
+}
+
+.search-bar__position-input:focus {
+  border-color: #1db954;
+}
+
+.search-bar__cancel-btn {
+  background: none;
+  border: none;
+  color: #b3b3b3;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px;
+  transition: color 0.15s;
+}
+
+.search-bar__cancel-btn:hover {
+  color: #e74c3c;
 }

@@ -21,6 +21,13 @@
   font-weight: 700;
 }
 
+.playlist__count {
+  font-size: 13px;
+  color: #b3b3b3;
+  font-weight: 400;
+  margin-left: 6px;
+}
+
 .playlist__filter-btn {
   background: none;
   border: 1px solid #535353;
@@ -65,12 +72,34 @@
 /* SongItem styles */
 .song-item {
   display: grid;
-  grid-template-columns: 1fr auto auto auto;
+  grid-template-columns: 24px 1fr auto auto auto;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   padding: 8px 12px;
   border-radius: 6px;
   transition: background 0.15s;
+  cursor: grab;
+}
+
+.song-item:active {
+  cursor: grabbing;
+}
+
+.song-item--drag-over {
+  background: #1db95433;
+  border: 1px dashed #1db954;
+}
+
+.song-item__drag-handle {
+  color: #535353;
+  font-size: 16px;
+  cursor: grab;
+  user-select: none;
+  transition: color 0.15s;
+}
+
+.song-item:hover .song-item__drag-handle {
+  color: #b3b3b3;
 }
 
 .song-item:hover {
