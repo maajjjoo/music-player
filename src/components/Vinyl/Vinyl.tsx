@@ -11,7 +11,7 @@ interface VinylProps {
 // ── Utility: Dominant Color Extractor ────────────────────────────────────────
 const DominantColorExtractor = {
   SIZE: 20,
-  DEFAULT: '#e8e0d8',
+  DEFAULT: '#a855f7',
 
   extract(img: HTMLImageElement): string {
     try {
@@ -22,16 +22,67 @@ const DominantColorExtractor = {
       if (!ctx) return this.DEFAULT;
       ctx.drawImage(img, 0, 0, this.SIZE, this.SIZE);
       const data = ctx.getImageData(0, 0, this.SIZE, this.SIZE).data;
+      
+      // Get dominant color by averaging
       let r = 0, g = 0, b = 0;
       for (let i = 0; i < data.length; i += 4) {
-        r += data[i]; g += data[i + 1]; b += data[i + 2];
+        r += data[i]; 
+        g += data[i + 1]; 
+        b += data[i + 2];
       }
       const n = data.length / 4;
-      // Lighten toward white for a soft background tint
-      const lr = Math.round((r / n) * 0.35 + 255 * 0.65);
-      const lg = Math.round((g / n) * 0.35 + 255 * 0.65);
-      const lb = Math.round((b / n) * 0.35 + 255 * 0.65);
-      return `rgb(${lr},${lg},${lb})`;
+      r = Math.round(r / n);
+      g = Math.round(g / n);
+      b = Math.round(b / n);
+      
+      // Convert to HSL to boost saturation and adjust lightness
+      const rNorm = r / 255;
+      const gNorm = g / 255;
+      const bNorm = b / 255;
+      const max = Math.max(rNorm, gNorm, bNorm);
+      const min = Math.min(rNorm, gNorm, bNorm);
+      let h = 0, s = 0, l = (max + min) / 2;
+      
+      if (max !== min) {
+        const d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        
+        switch (max) {
+          case rNorm: h = ((gNorm - bNorm) / d + (gNorm < bNorm ? 6 : 0)) / 6; break;
+          case gNorm: h = ((bNorm - rNorm) / d + 2) / 6; break;
+          case bNorm: h = ((rNorm - gNorm) / d + 4) / 6; break;
+        }
+      }
+      
+      // Boost saturation and adjust lightness for vibrant background
+      s = Math.min(1, s * 1.5); // Increase saturation
+      l = Math.max(0.4, Math.min(0.7, l)); // Keep lightness in good range
+      
+      // Convert back to RGB
+      const hslToRgb = (h: number, s: number, l: number) => {
+        let r, g, b;
+        if (s === 0) {
+          r = g = b = l;
+        } else {
+          const hue2rgb = (p: number, q: number, t: number) => {
+            if (t < 0) t += 1;
+            if (t > 1) t -= 1;
+            if (t < 1/6) return p + (q - p) * 6 * t;
+            if (t < 1/2) return q;
+            if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+            return p;
+          };
+          const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+          const p = 2 * l - q;
+          r = hue2rgb(p, q, h + 1/3);
+          g = hue2rgb(p, q, h);
+          b = hue2rgb(p, q, h - 1/3);
+        }
+        return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+      };
+      
+      const [finalR, finalG, finalB] = hslToRgb(h, s, l);
+      return `rgb(${finalR},${finalG},${finalB})`;
     } catch {
       return this.DEFAULT;
     }

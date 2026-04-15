@@ -24,6 +24,7 @@ interface PlaylistActions {
   toggleFavorite: (id: string) => void;
   toggleShuffle: () => void;
   toggleRepeat: () => void;
+  setRepeatMode: (mode: RepeatMode) => void;
   setSearchQuery: (query: string) => void;
   toggleFavoritesFilter: () => void;
   getFilteredSongs: () => SongNode[];
@@ -126,6 +127,10 @@ export function usePlaylist(): PlaylistState & PlaylistActions {
     });
   }, []);
 
+  const setRepeatMode = useCallback((mode: RepeatMode) => {
+    setState((prev) => ({ ...prev, repeatMode: mode }));
+  }, []);
+
   const setSearchQuery = useCallback((query: string) => {
     setState((prev) => ({ ...prev, searchQuery: query }));
   }, []);
@@ -169,6 +174,7 @@ export function usePlaylist(): PlaylistState & PlaylistActions {
     toggleFavorite,
     toggleShuffle,
     toggleRepeat,
+    setRepeatMode,
     setSearchQuery,
     toggleFavoritesFilter,
     getFilteredSongs,

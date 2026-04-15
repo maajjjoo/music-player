@@ -14,8 +14,9 @@ export default function App() {
 
   const handleSongEnded = useCallback(() => {
     if (playlist.repeatMode === 'one') {
-      // Repeat current song - just replay without reloading
+      // Repeat current song once, then disable repeat
       player.replay();
+      playlist.setRepeatMode('none');
     } else if (playlist.repeatMode === 'all') {
       // Play next song (will wrap to start)
       const next = playlist.playNext();
